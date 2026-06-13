@@ -32,5 +32,13 @@ All routes follow the `{ code, message, data }` envelope. Auth via Auth.js v5 se
 ### Cron
 - `GET /api/crons/cleanup` — prune resolved proposals + old error logs (`CRON_SECRET`).
 
-## [Unreleased]
-- Phase 5 adaptive-loop endpoints (mastery rollups, export/import) — see [[phase-5-adaptive-learning-loop]].
+## [Unreleased] — Phase 5 (Slices 0–8, in progress)
+<!-- Updated: 2026-06-13 -->
+- **Progress:** `GET /api/progress/stats` (derived metrics — true-retention, mature/young, streak, words-by-CEFR, errors-by-type; now also returns `weeklyNote`/`weeklyNoteAt` from the rollup), `GET /api/progress/timeline` (journal feed).
+- **Profile:** `GET /api/profile` (desiredRetention + cefr/langs), `PATCH /api/profile` (set `desiredRetention` 0.80–0.97 — the FSRS slider in Settings).
+- **Grammar SRS:** `GET/POST /api/grammar/review` (FSRS grammar cards; production self-grade; grade feeds BKT).
+- **Export:** `GET /api/export?format=json|vocab-csv|revlog-csv` (file download, `Content-Disposition`).
+- **SRS now per-direction + FSRS:** `POST /api/vocabulary/review` accepts `direction` (DE_TO_RU/RU_TO_DE/PRODUCE_ARTICLE/PRODUCE_PLURAL) and reschedules via FSRS (`ts-fsrs`), persisting DSR state.
+- **Adaptive loop (no new public routes):** exercise-grade / SRS-review / homework-correction Apply funnel through `recordAttempt` (append-only `Attempt` + BKT mastery + SRS nudge); the AI envelope gains a focus-block + decay-on-read + grounding. See [[phase-5-implementation-plan]].
+- **Nightly rollup:** `GET /api/crons/rollup` (CRON_SECRET-gated, like `crons/cleanup`). Recomputes derived `LearnerProfile.weakAreasJson` from decay+30d error hotspots, stamps `weakAreasComputedAt`, emits `WEAK_AREA_CLEARED`/`STREAK_MILESTONE`, and writes an optional background weekly note (`progress_summary` feature, never billed) in the learner's native language. ⚠️ `CRON_SECRET` is empty in `.env` → cron routes 403 until a real secret is set + server restarted.
+- Still to come: RAG (pgvector), import.

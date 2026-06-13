@@ -21,6 +21,7 @@ Single Next.js app (frontend + backend + AI lib). All TypeScript.
 | Server state | @tanstack/react-query | 5.x | Fetch/cache/optimistic + offline persistence for decks |
 | Client state | zustand | 5.x | Dock, thread, shell stores |
 | i18n | next-intl | 3.x | ru primary UI, de content, en fallback; App Router native |
+| SRS scheduler | ts-fsrs | 5.x | FSRS (Difficulty/Stability/Retrievability) for vocab + grammar cards; replaced hand-rolled SM-2 (Phase 5 Slice 5). `Review` log kept for per-user optimization |
 | Rate-limit/cache | in-memory (dev) → @upstash/ratelimit+redis (prod) | latest | Provider-abstracted; local dev needs no external account |
 | AI provider | Google Gemini (free tier) | v1beta REST | Free testing; behind a `Provider` interface so others slot in |
 | Encryption | Node `crypto` (aes-256-gcm) | built-in | Provider API keys at rest; key from `ENCRYPTION_KEY` |

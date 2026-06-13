@@ -55,10 +55,16 @@ Caution learned: never run `next build` while `next dev` is live — it desyncs 
 
 **Also done (2026-06-13, batch 3):** admin **prompt-editor** (`/admin/prompts`): create/edit/activate/delete templates, **variables** CRUD (chips + add/delete), and a **side-by-side diff** vs the active version. **Playwright E2E** (`playwright.config.ts` + `e2e/smoke.spec.ts`, `chromium` installed): 5 specs green — login→dashboard, add-vocab→appears, SRS review loads, admin loads, language switch flips UI. `next build` green (43 pages).
 
-**Remaining (Phase 4 / post-MVP):** full PWA offline (SRS cache + IndexedDB BackgroundSync); i18n for the detail pages (grammar/homework/notes/exercises `[id]` still have some inline ru — list pages + chrome done); admin features/routing UI; wiring DB prompt templates into the orchestrator; FSRS, import/export (Anki/CSV), analytics, more providers — see [[post-mvp-backlog]].
+**Remaining (Phase 4 / post-MVP):** admin features/routing UI; wiring DB prompt templates into the orchestrator; import, analytics, more providers — see [[post-mvp-backlog]]. *(Done since: i18n of the `[id]` detail pages, FSRS, export (Anki/CSV), and **full PWA offline** (cached SRS review + IndexedDB write outbox) — shipped in Phase 5 + the polish/offline batch. See [[PWA-офлайн-SW-кэширует-чтения-IndexedDB-outbox-копит-записи]].)*
 
 ### Phase 4 — Optional polish
 See [[post-mvp-backlog]].
+
+## Post-MVP phases (5–7) — added after the MVP
+These extend the shipped MVP; each has its own spec. Status as of 2026-06-13:
+- **Phase 5 — Adaptive Learning Loop & Retention** — 🟦 in progress (Slices 0–8 + deferred shipped). Closed loop (error→`Attempt`→BKT mastery→focus-block→tutor), decay-on-read + grounding, production-first, progress/journal (`/progress`), per-direction SRS (incl. reverse translation), **FSRS** (ts-fsrs), grammar-SRS, **export** (JSON/CSV), **nightly rollup** (`crons/rollup` → derived weak-areas + milestones + weekly note). Remaining: RAG (deferred-by-design until corpus is large) · ELO/streaks/import/reading/CEFR-goals. Spec: [[phase-5-adaptive-learning-loop]]; build plan + live-verification log: [[phase-5-implementation-plan]].
+- **Phase 6 — Design directions** — ✅ done (market research + 3 directions + wireframes). [[phase-6-design-directions]].
+- **Phase 7 — Design implementation** — ✅ done (Direction B gently-muted + centered Google-style assistant; ui-tester verified). [[phase-7-design-implementation]].
 
 ## Cross-cutting invariants (every phase)
 Envelope rebuilt from DB each send · all user text `sanitize()`+`<data>`-wrapped · writes are proposals only · background ops `isBackground`+`skipRateLimit`, never billed · guards abuse→rate→budget→route→execute→log · ownership before service, admin re-checked server-side · caps silent-trim.

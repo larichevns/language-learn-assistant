@@ -17,7 +17,8 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 
 ## Specs
 - [[mvp-scope-and-phases]] — approved MVP scope, hero feature, the phases + verification evidence
-- [[phase-5-adaptive-learning-loop]] — make the tutor truly adaptive + retention/journal/export (research-backed)
+- [[phase-5-adaptive-learning-loop]] — make the tutor truly adaptive + retention/journal/export (research-backed spec — the "what/why")
+- [[phase-5-implementation-plan]] — Phase 5 solution design: schema deltas, the closed loop (`recordAttempt`), BKT/decay/FSRS, focus-block, 10 build slices, test plan (the "how")
 - [[phase-6-design-directions]] — 3 distinct visual directions + market analysis (prototypes in `design/wireframes/`)
 - [[phase-7-design-implementation]] — chosen: Direction B gently-muted + centered Google-style assistant; ui-tester verified
 - [[SPEC_TEMPLATE]] — template for new feature specs
@@ -37,9 +38,14 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 - [[Тема-UI-спокойная-индиго-бирюза]]
 - [[i18n-с-первого-дня-дефолт-русский]]
 - [[Fable только в solution-designer и tech-lead-reviewer]] — agent model strategy
+- [[Язык-ответа-выводится-из-nativeLang-а-не-хардкодится]] — response language is data-driven, not hardcoded in the persona
+- [[Loop-записи-обходят-propose-Apply-это-derived-state]] — Phase 5 loop writes (Attempt/BKT/FSRS/timeline/rollup) write directly; they're derived state from the learner's own grades, not model proposals
 
-### Scenarios / Integrations / Debugging / Patterns
-- (to fill as we build)
+### Scenarios / Integrations / Patterns
+- [[PWA-офлайн-SW-кэширует-чтения-IndexedDB-outbox-копит-записи]] — офлайн ревью из SW-кэша + очередь грейдов в IndexedDB, флаш при возврате связи (без Background Sync — ради iOS)
+
+### Debugging
+- [[propose-Apply-500-на-вложенных-payload-из-за-формы-модели]] — Apply 500 для HOMEWORK_CORRECTION/EXERCISE_SET; модель эмитит неканоничную форму → толерантные `z.preprocess` + привязка homeworkId из scope
 
 ## API
 - [[_changelog]] — API version history (per-module docs added as routes land)

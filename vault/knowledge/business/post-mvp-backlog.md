@@ -34,8 +34,19 @@ Everything intentionally deferred past the first usable version. **Rule: nothing
 - Conversation/role-play practice mode with scenario prompts.
 - Listening comprehension from German audio/video.
 - Calendar/streak reminders + push notifications (PWA).
-- Spaced-repetition for grammar rules (not just vocab).
 - Goethe/TELC exam-prep mode (timed mock tests).
+
+## Phase 5 follow-ups (optional polish / deferred within the phase)
+<!-- Updated: 2026-06-13 | polish batch after Slice 8 -->
+- **Desired-retention slider** — **DONE** (Settings → «Целевое запоминание», 0.80–0.97; `GET/PATCH /api/profile`; verified live: drag → debounced PATCH → DB persisted).
+- **Grammar-due on the dashboard** — **DONE** (the «К повторению» card sums vocab + grammar due, with a `{vocab} слов · {grammar} грамм.` breakdown; click routes to wherever work waits).
+- **Weekly-note model** — **DONE** (lite→**flash** for tighter format adherence; `cleanNote` still strips stray markdown as a safety net).
+- **i18n detail pages** — **DONE** (grammar/homework/notes/exercises `[id]` externalized to `messages/{ru,en}.json`; the `'(фото-домашка)'` rawInput sentinel left as data, not translated).
+- **FSRS per-user parameter optimization** once a user has ~1000+ reviews (the `Review` log is the training data); until then, global defaults.
+- **Replay `Review` log to seed FSRS stability** for pre-FSRS cards (today they transition fresh on the next review).
+- Spaced-repetition for grammar — **DONE** (Slice 6: `GrammarCard` + production self-grade).
+- **Nightly rollup deploy (Slice 8 follow-ups):** ✅ `CRON_SECRET` now set (real 32-byte hex; `crons/rollup`+`crons/cleanup` verified 200). At scale, bound `runRollup` to learners active in the last ~30d instead of all profiles. Per-user note opt-out is unbuilt. (For prod, set the secrets as host env vars, not a file.)
+- Remaining Phase 5 slices (9 RAG/pgvector · 10 ELO/streaks/import/graded-reading/CEFR-goals) are scoped in [[phase-5-implementation-plan]], not here.
 
 ## Related
 - [[mvp-scope-and-phases]] · `PLAN.md` §7 Phase 4
