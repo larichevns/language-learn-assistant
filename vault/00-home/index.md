@@ -46,6 +46,7 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 
 ### Debugging
 - [[propose-Apply-500-на-вложенных-payload-из-за-формы-модели]] — Apply 500 для HOMEWORK_CORRECTION/EXERCISE_SET; модель эмитит неканоничную форму → толерантные `z.preprocess` + привязка homeworkId из scope
+- [[TTS-читал-по-английски-голоса-Web-Speech-грузятся-асинхронно]] — озвучка читала немецкое английским голосом; `getVoices()` пуст на первом клике → фолбэк на системный дефолт; грей+кэшируй голоса, задавай явный de-DE
 
 ## API
 - [[_changelog]] — API version history (per-module docs added as routes land)
