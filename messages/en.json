@@ -1,0 +1,153 @@
+{
+  "common": {
+    "appName": "LanguageLearnAssistant",
+    "tagline": "AI assistant for learning German",
+    "loading": "Loading…",
+    "save": "Save",
+    "add": "Add",
+    "back": "Back",
+    "showDetails": "Show details",
+    "remove": "remove"
+  },
+  "landing": {
+    "title": "Learn German with an AI assistant",
+    "subtitle": "Structure your homework and class work, store words and grammar, get exercises and mistake explanations — all in one place.",
+    "ctaPrimary": "Get started",
+    "ctaSecondary": "Sign in",
+    "phase": "In development"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "vocabulary": "Vocabulary",
+    "grammar": "Grammar",
+    "homework": "Homework",
+    "exercises": "Exercises",
+    "notes": "Notes",
+    "admin": "Admin",
+    "settings": "Settings",
+    "assistant": "Assistant",
+    "menu": "Menu"
+  },
+  "auth": {
+    "signInTitle": "Sign in",
+    "signUpTitle": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "nameOptional": "optional",
+    "minChars": "At least 8 characters",
+    "signIn": "Sign in",
+    "googleSignIn": "Sign in with Google",
+    "createAccount": "Create account",
+    "noAccount": "No account?",
+    "haveAccount": "Already have an account?",
+    "signUpLink": "Sign up",
+    "signInLink": "Sign in",
+    "badCredentials": "Wrong email or password",
+    "emailTaken": "This email is already registered",
+    "registerFailed": "Could not register"
+  },
+  "dashboard": {
+    "greeting": "Hi, {name}!",
+    "greetingNoName": "Hi!",
+    "subtitle": "Level {level} · keep learning German",
+    "startReview": "Start review",
+    "due": "Due for review",
+    "words": "Words in deck",
+    "grammarTopics": "Grammar topics",
+    "homeworks": "Homework items",
+    "helpTitle": "Need help with German?",
+    "helpText": "Tap «Assistant» bottom-right — ask a rule, say «add the word …», or paste your homework."
+  },
+  "vocab": {
+    "title": "Vocabulary",
+    "count": "{count} words",
+    "review": "Review",
+    "wordPlaceholder": "Wort (e.g. das Haus)",
+    "translationPlaceholder": "translation",
+    "hint": "…or just tell the Assistant «add the word aufstehen» — it fills everything in.",
+    "dueBadge": "due",
+    "empty": "Empty so far. Add your first word or ask the Assistant."
+  },
+  "review": {
+    "progress": "{index} / {total}",
+    "showAnswer": "Show answer",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "doneTitle": "Done for today!",
+    "doneText": "Cards reviewed: {count}.",
+    "doneEmpty": "No cards due.",
+    "toVocab": "To vocabulary",
+    "toDashboard": "To dashboard"
+  },
+  "homework": {
+    "title": "Homework",
+    "subtitle": "Paste an assignment — the assistant structures it and reviews mistakes.",
+    "titlePlaceholder": "Title (optional)",
+    "textPlaceholder": "Paste your homework text…",
+    "photo": "Homework photo",
+    "photoSelected": "Photo selected",
+    "empty": "No homework yet.",
+    "check": "Check",
+    "suggested": "Suggested fixes",
+    "corrections": "Corrections",
+    "allHomework": "All homework"
+  },
+  "grammar": {
+    "title": "Grammar",
+    "subtitle": "{count} topics · ask the Assistant «explain Perfekt» — it explains and offers to save.",
+    "mastery": "Mastered {pct}%",
+    "examples": "Examples",
+    "pitfalls": "Pitfalls",
+    "empty": "No topics yet. Ask the Assistant «explain Akkusativ».",
+    "allTopics": "All topics"
+  },
+  "exercises": {
+    "title": "Exercises",
+    "subtitle": "Generate a set and take it — answers are graded automatically.",
+    "byCurrentUnit": "By current unit",
+    "generate": "Generate",
+    "take": "take",
+    "empty": "No exercises yet.",
+    "check": "Check",
+    "tasks": "{count} tasks",
+    "allExercises": "All exercises"
+  },
+  "notes": {
+    "title": "Class notes",
+    "subtitle": "Save a note — on its page ask the Assistant to extract words and grammar.",
+    "titlePlaceholder": "Title (optional)",
+    "textPlaceholder": "Lesson notes…",
+    "empty": "No notes yet.",
+    "parse": "Parse with Assistant",
+    "newWords": "New words",
+    "grammar": "Grammar",
+    "allNotes": "All notes"
+  },
+  "assistant": {
+    "title": "Lingua",
+    "scopeGlobal": "Whole course",
+    "empty": "Ask anything about German — or say «add the word …» and I'll set it up.",
+    "placeholder": "Message… (Enter to send)",
+    "thinking": "Thinking…"
+  },
+  "proposal": {
+    "apply": "Apply",
+    "refine": "Refine",
+    "discard": "Discard",
+    "applied": "Applied",
+    "discarded": "Discarded",
+    "superseded": "Superseded"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Interface language",
+    "languageRu": "Русский",
+    "languageEn": "English",
+    "theme": "Theme",
+    "account": "Account",
+    "themeHint": "Theme and sign-out are in the top-right corner."
+  }
+}

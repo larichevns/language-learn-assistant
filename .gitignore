@@ -1,0 +1,60 @@
+# Environment
+.env
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.user
+*.suo
+
+# Claude Code
+.claude/*
+!.claude/agents/
+!.claude/rules/
+!.claude/skills/
+
+# Vault ephemeral
+vault/sessions/
+vault/inbox/
+
+# .NET
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Test / tooling
+coverage/
+playwright-report/
+test-results/
+.turbo/
+
+# Prisma local sqlite (if ever used)
+prisma/*.db
+
+# Docker local volumes
+postgres-data/
+redis-data/
+
+# Skeleton repo: track the credentials TEMPLATE (placeholders only; real per-project
+# credentials.md stays ignored by the .claude/ rule above)
+!.claude/credentials.template.md

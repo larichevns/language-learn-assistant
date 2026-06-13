@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Calm "study" theme — indigo primary, teal personality (accent/deutsch), green success.
+  Light + dark via the `.dark` class. Values are HSL channels (no hsl() wrapper)
+  so Tailwind can compose them with opacity.
+*/
+@layer base {
+  :root {
+    --background: 210 40% 99%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Indigo brand */
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Subtle secondary surface */
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 222 30% 20%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 12% 46%;
+
+    /* Teal personality (light hover/active surface) */
+    --accent: 174 60% 94%;
+    --accent-foreground: 175 84% 22%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    /* German-content marker (teal badge) */
+    --deutsch: 174 62% 41%;
+    --deutsch-foreground: 0 0% 100%;
+
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 243 75% 59%;
+
+    --radius: 0.7rem;
+  }
+
+  .dark {
+    --background: 222 28% 9%;
+    --foreground: 210 30% 96%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 210 30% 96%;
+    --popover: 222 25% 12%;
+    --popover-foreground: 210 30% 96%;
+
+    --primary: 243 80% 70%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 30% 92%;
+
+    --muted: 222 18% 18%;
+    --muted-foreground: 220 14% 64%;
+
+    --accent: 175 50% 18%;
+    --accent-foreground: 174 70% 78%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 50% 50%;
+    --success-foreground: 222 47% 11%;
+
+    --deutsch: 174 58% 46%;
+    --deutsch-foreground: 222 47% 11%;
+
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 243 80% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+/* Inline marker for German learning content in the UI. */
+@layer components {
+  .de {
+    @apply font-medium text-foreground underline decoration-deutsch/60 decoration-2 underline-offset-2;
+  }
+}

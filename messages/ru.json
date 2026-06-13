@@ -1,0 +1,153 @@
+{
+  "common": {
+    "appName": "LanguageLearnAssistant",
+    "tagline": "ИИ-ассистент для изучения немецкого",
+    "loading": "Загрузка…",
+    "save": "Сохранить",
+    "add": "Добавить",
+    "back": "Назад",
+    "showDetails": "Показать детали",
+    "remove": "убрать"
+  },
+  "landing": {
+    "title": "Учи немецкий с ИИ-ассистентом",
+    "subtitle": "Структурируй домашки и классную работу, храни слова и грамматику, получай упражнения и разбор ошибок — всё в одном месте.",
+    "ctaPrimary": "Начать",
+    "ctaSecondary": "Войти",
+    "phase": "В разработке"
+  },
+  "nav": {
+    "dashboard": "Дашборд",
+    "vocabulary": "Словарь",
+    "grammar": "Грамматика",
+    "homework": "Домашки",
+    "exercises": "Упражнения",
+    "notes": "Заметки",
+    "admin": "Админка",
+    "settings": "Настройки",
+    "assistant": "Ассистент",
+    "menu": "Меню"
+  },
+  "auth": {
+    "signInTitle": "Вход",
+    "signUpTitle": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "name": "Имя",
+    "nameOptional": "необязательно",
+    "minChars": "Минимум 8 символов",
+    "signIn": "Войти",
+    "googleSignIn": "Войти через Google",
+    "createAccount": "Создать аккаунт",
+    "noAccount": "Нет аккаунта?",
+    "haveAccount": "Уже есть аккаунт?",
+    "signUpLink": "Зарегистрироваться",
+    "signInLink": "Войти",
+    "badCredentials": "Неверный email или пароль",
+    "emailTaken": "Этот email уже зарегистрирован",
+    "registerFailed": "Не удалось зарегистрироваться"
+  },
+  "dashboard": {
+    "greeting": "Привет, {name}!",
+    "greetingNoName": "Привет!",
+    "subtitle": "Уровень {level} · продолжаем учить немецкий",
+    "startReview": "Начать повторение",
+    "due": "К повторению",
+    "words": "Слов в словаре",
+    "grammarTopics": "Тем грамматики",
+    "homeworks": "Домашних работ",
+    "helpTitle": "Нужна помощь с немецким?",
+    "helpText": "Нажми «Ассистент» справа внизу — спроси правило, скажи «добавь слово …» или вставь домашку."
+  },
+  "vocab": {
+    "title": "Словарь",
+    "count": "{count} слов",
+    "review": "Повторять",
+    "wordPlaceholder": "Wort (z.B. das Haus)",
+    "translationPlaceholder": "перевод",
+    "hint": "…или просто скажи Ассистенту «добавь слово aufstehen» — он заполнит всё сам.",
+    "dueBadge": "к повторению",
+    "empty": "Пока пусто. Добавь первое слово или попроси Ассистента."
+  },
+  "review": {
+    "progress": "{index} / {total}",
+    "showAnswer": "Показать ответ",
+    "again": "Снова",
+    "hard": "Трудно",
+    "good": "Хорошо",
+    "easy": "Легко",
+    "doneTitle": "На сегодня всё!",
+    "doneText": "Повторено карточек: {count}.",
+    "doneEmpty": "Нет карточек к повторению.",
+    "toVocab": "К словарю",
+    "toDashboard": "На дашборд"
+  },
+  "homework": {
+    "title": "Домашки",
+    "subtitle": "Вставь задание — ассистент структурирует и разберёт ошибки.",
+    "titlePlaceholder": "Название (необязательно)",
+    "textPlaceholder": "Вставь текст домашней работы…",
+    "photo": "Фото домашки",
+    "photoSelected": "Фото выбрано",
+    "empty": "Пока нет домашек.",
+    "check": "Проверить",
+    "suggested": "Предложенные исправления",
+    "corrections": "Исправления",
+    "allHomework": "Все домашки"
+  },
+  "grammar": {
+    "title": "Грамматика",
+    "subtitle": "{count} тем · спроси Ассистента «объясни Perfekt» — он объяснит и предложит сохранить.",
+    "mastery": "Усвоено {pct}%",
+    "examples": "Примеры",
+    "pitfalls": "Подводные камни",
+    "empty": "Пока нет тем. Спроси Ассистента «объясни Akkusativ».",
+    "allTopics": "Все темы"
+  },
+  "exercises": {
+    "title": "Упражнения",
+    "subtitle": "Сгенерируй набор и пройди — ответы проверятся автоматически.",
+    "byCurrentUnit": "По текущему уроку",
+    "generate": "Сгенерировать",
+    "take": "пройти",
+    "empty": "Пока нет упражнений.",
+    "check": "Проверить",
+    "tasks": "{count} заданий",
+    "allExercises": "Все упражнения"
+  },
+  "notes": {
+    "title": "Заметки с уроков",
+    "subtitle": "Сохрани конспект — на странице заметки попроси Ассистента вытащить слова и грамматику.",
+    "titlePlaceholder": "Название (необязательно)",
+    "textPlaceholder": "Конспект урока…",
+    "empty": "Пока нет заметок.",
+    "parse": "Разобрать с Ассистентом",
+    "newWords": "Новые слова",
+    "grammar": "Грамматика",
+    "allNotes": "Все заметки"
+  },
+  "assistant": {
+    "title": "Lingua",
+    "scopeGlobal": "Весь курс",
+    "empty": "Спроси что угодно по немецкому — или скажи «добавь слово …», и я всё оформлю.",
+    "placeholder": "Сообщение… (Enter — отправить)",
+    "thinking": "Думаю…"
+  },
+  "proposal": {
+    "apply": "Применить",
+    "refine": "Уточнить",
+    "discard": "Отклонить",
+    "applied": "Применено",
+    "discarded": "Отклонено",
+    "superseded": "Заменено"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык интерфейса",
+    "languageRu": "Русский",
+    "languageEn": "English",
+    "theme": "Тема",
+    "account": "Аккаунт",
+    "themeHint": "Тему и выход можно менять в правом верхнем углу."
+  }
+}
