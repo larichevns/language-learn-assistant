@@ -29,8 +29,8 @@ export function MobileNav({ isAdmin }: { isAdmin: boolean }) {
         <Menu className="h-5 w-5" />
       </Button>
       {open && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+        <div className="fixed inset-0 z-[60]">
+          <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <nav className="absolute left-0 top-0 flex h-full w-64 animate-fade-in flex-col gap-1 border-r border-border bg-card p-3 shadow-xl">
             <div className="mb-2 flex items-center justify-between px-2">
               <span className="font-display font-bold">LLA</span>

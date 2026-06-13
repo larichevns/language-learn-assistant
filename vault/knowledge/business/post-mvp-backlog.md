@@ -23,6 +23,13 @@ Everything intentionally deferred past the first usable version. **Rule: nothing
 - **Prod hardening**: Sentry, structured logging, perf budgets, axe audit, CI gates, expanded E2E.
 - **Productionization for many users**: move guards in-memory→Upstash, hosted Postgres (Neon/Supabase), billing/tiers if it goes public.
 
+## UI / design polish (Phase 7 follow-ups, from ui-tester)
+- Mobile nav drawer: proper slide-in animation (shadcn `Sheet`) — backdrop + z-order already fixed.
+- Manual "add word" form: run through the propose/Apply enrichment pipeline (article/gender/plural/level) instead of saving bare lemma+translation.
+- Dark mode: raise sidebar text contrast (`text-muted-foreground` → `text-foreground/80`).
+- Optional vertically-centered assistant window mode (current: grows up from the bottom composer, per ToonyGamy).
+- Generate proper PNG/maskable PWA icons (currently a single SVG).
+
 ## Possible future features (ideas, unscheduled)
 - Conversation/role-play practice mode with scenario prompts.
 - Listening comprehension from German audio/video.

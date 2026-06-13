@@ -98,8 +98,9 @@ export default function ReviewPage() {
               <Badge variant="muted">{current.vocabEntry.pos}</Badge>
               <div className="flex items-center gap-2">
                 <span className="de font-display text-3xl">
-                  {current.vocabEntry.gender ? `${current.vocabEntry.gender.toLowerCase()} ` : ''}
-                  {current.vocabEntry.lemma.replace(/^(der|die|das)\s+/i, '')}
+                  {current.vocabEntry.gender
+                    ? `${current.vocabEntry.gender.toLowerCase()} ${current.vocabEntry.lemma.replace(/^(der|die|das)\s+/i, '')}`
+                    : current.vocabEntry.lemma}
                 </span>
                 <SpeakButton text={current.vocabEntry.lemma} className="h-6 w-6" />
               </div>

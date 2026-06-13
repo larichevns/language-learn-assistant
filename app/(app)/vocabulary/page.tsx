@@ -105,8 +105,7 @@ export default function VocabularyPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
                       <span className="de font-display text-lg">
-                        {v.gender ? `${v.gender.toLowerCase()} ` : ''}
-                        {v.lemma.replace(/^(der|die|das)\s+/i, '')}
+                        {v.gender ? `${v.gender.toLowerCase()} ${v.lemma.replace(/^(der|die|das)\s+/i, '')}` : v.lemma}
                       </span>
                       <SpeakButton text={v.lemma} />
                     </div>
