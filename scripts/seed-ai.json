@@ -1,0 +1,54 @@
+{
+  "profile": {
+    "cefrLevel": "A2",
+    "nativeLang": "ru",
+    "targetLang": "de",
+    "goals": ["Сдать Goethe-Zertifikat B1", "Свободно говорить на работе"],
+    "weakAreas": ["der/die/das (Genus)", "Perfekt: haben vs sein", "Wechselpräpositionen + Akkusativ/Dativ"],
+    "formalityPref": "BOTH"
+  },
+  "vocab": [
+    { "lemma": "das Haus", "pos": "NOUN", "translationRu": "дом", "gender": "DAS", "pluralForm": "Häuser", "cefrLevel": "A1", "mastery": 0.9 },
+    { "lemma": "die Rechnung", "pos": "NOUN", "translationRu": "счёт", "gender": "DIE", "pluralForm": "Rechnungen", "cefrLevel": "A2", "mastery": 0.4 },
+    { "lemma": "gehen", "pos": "VERB", "translationRu": "идти", "auxiliary": "SEIN", "partizipII": "gegangen", "cefrLevel": "A1", "mastery": 0.7 },
+    { "lemma": "kaufen", "pos": "VERB", "translationRu": "покупать", "auxiliary": "HABEN", "partizipII": "gekauft", "cefrLevel": "A1", "mastery": 0.8 },
+    { "lemma": "aufstehen", "pos": "VERB", "translationRu": "вставать", "isSeparable": true, "separablePrefix": "auf", "auxiliary": "SEIN", "partizipII": "aufgestanden", "cefrLevel": "A2", "mastery": 0.3 }
+  ],
+  "grammarTopics": [
+    { "title": "Perfekt mit haben/sein", "category": "TENSE", "explanationRu": "Перфект образуется из haben/sein + Partizip II. Глаголы движения и смены состояния — с sein.", "masteryScore": 0.45 },
+    { "title": "Akkusativ vs Dativ", "category": "CASE", "explanationRu": "Аккузатив — прямое дополнение; датив — косвенное. Wechselpräpositionen зависят от вопроса wohin?/wo?", "masteryScore": 0.35 },
+    { "title": "Trennbare Verben", "category": "SEPARABLE_VERB", "explanationRu": "Отделяемая приставка уходит в конец предложения: Ich stehe um 7 Uhr auf.", "masteryScore": 0.4 }
+  ],
+  "currentUnit": {
+    "title": "Lektion 5: Perfekt und Tagesablauf",
+    "premise": "На этой неделе проходим Perfekt (haben/sein) и описание дня (Tagesablauf) с отделяемыми глаголами: aufstehen, anfangen, einkaufen. Цель — рассказать о вчерашнем дне в Perfekt.",
+    "summary": "Разобрали образование Partizip II у слабых глаголов; ещё путаемся в выборе haben/sein."
+  },
+  "thread": {
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "summary": "",
+    "messages": [
+      { "role": "user", "content": "Можешь напомнить, когда Perfekt с sein?" },
+      { "role": "model", "content": "Конечно! **sein** используется с глаголами движения (**gehen**, **fahren**, **kommen**) и смены состояния (**aufstehen**, **einschlafen**, **werden**). Остальные — с **haben**. Например: Ich **bin** nach Hause **gegangen**, но Ich **habe** ein Buch **gekauft**." }
+    ]
+  },
+  "scopeObjects": {
+    "GRAMMAR_TOPIC:Perfekt": {
+      "title": "Perfekt mit haben/sein",
+      "category": "TENSE",
+      "explanationRu": "Перфект = haben/sein + Partizip II. Движение/смена состояния → sein.",
+      "pitfalls": ["Глаголы движения с sein, не haben", "sein/bleiben/werden всегда с sein"],
+      "masteryScore": 0.45
+    },
+    "VOCAB_ENTRY:aufstehen": {
+      "lemma": "aufstehen",
+      "pos": "VERB",
+      "translationRu": "вставать",
+      "isSeparable": true,
+      "separablePrefix": "auf",
+      "auxiliary": "SEIN",
+      "partizipII": "aufgestanden"
+    }
+  }
+}
