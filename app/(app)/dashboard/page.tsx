@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -20,11 +21,17 @@ export default async function DashboardPage() {
   ]);
 
   const stats = [
-    { label: t('due'), value: due, icon: Brain, href: '/vocabulary/review', accent: true },
-    { label: t('words'), value: vocab, icon: BookOpen, href: '/vocabulary' },
-    { label: t('grammarTopics'), value: grammar, icon: SpellCheck2, href: '/grammar' },
-    { label: t('homeworks'), value: homework, icon: NotebookPen, href: '/homework' },
+    { label: t('due'), value: due, icon: Brain, href: '/vocabulary/review', tone: 'violet' as const },
+    { label: t('words'), value: vocab, icon: BookOpen, href: '/vocabulary', tone: 'coral' as const },
+    { label: t('grammarTopics'), value: grammar, icon: SpellCheck2, href: '/grammar', tone: 'green' as const },
+    { label: t('homeworks'), value: homework, icon: NotebookPen, href: '/homework', tone: 'amber' as const },
   ];
+  const TONE = {
+    violet: { card: 'bg-primary text-primary-foreground', chip: 'bg-white/20 text-white', lab: 'text-white/80' },
+    coral: { card: 'bg-coral/10', chip: 'bg-coral text-coral-foreground', lab: 'text-muted-foreground' },
+    green: { card: 'bg-success/10', chip: 'bg-success text-success-foreground', lab: 'text-muted-foreground' },
+    amber: { card: 'bg-amber/15', chip: 'bg-amber text-amber-foreground', lab: 'text-muted-foreground' },
+  };
 
   return (
     <div className="mx-auto max-w-5xl p-6">
@@ -41,17 +48,22 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href}>
-            <Card className={s.accent ? 'border-primary/40' : ''}>
-              <CardContent className="flex flex-col gap-2 p-5">
-                <s.icon className={s.accent ? 'h-5 w-5 text-primary' : 'h-5 w-5 text-muted-foreground'} />
-                <span className="font-display text-3xl font-bold tabular-nums">{s.value}</span>
-                <span className="text-sm text-muted-foreground">{s.label}</span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {stats.map((s) => {
+          const tn = TONE[s.tone];
+          return (
+            <Link key={s.label} href={s.href}>
+              <Card className={cn('border-transparent transition-transform hover:-translate-y-0.5', tn.card)}>
+                <CardContent className="flex flex-col gap-3 p-5">
+                  <span className={cn('flex h-11 w-11 items-center justify-center rounded-xl', tn.chip)}>
+                    <s.icon className="h-5 w-5" />
+                  </span>
+                  <span className="font-display text-3xl font-extrabold tabular-nums">{s.value}</span>
+                  <span className={cn('text-sm font-semibold', tn.lab)}>{s.label}</span>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       <Card className="mt-6">

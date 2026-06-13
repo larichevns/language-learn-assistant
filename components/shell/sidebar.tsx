@@ -1,13 +1,13 @@
 'use client';
 
-import { GraduationCap, Settings, ShieldCheck } from 'lucide-react';
+import { Flame, GraduationCap, Settings, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { NAV } from './nav-items';
 
-export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
+export function Sidebar({ isAdmin, streak }: { isAdmin: boolean; streak: number }) {
   const t = useTranslations('nav');
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -32,7 +32,25 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
             {t(key)}
           </Link>
         ))}
-        <div className="mt-auto flex flex-col gap-1">
+        <div className="mt-auto flex flex-col gap-2">
+          <div className="flex items-center gap-3 rounded-2xl bg-amber/15 px-3.5 py-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-card">
+              <Flame className="h-5 w-5 text-amber" fill="currentColor" />
+            </span>
+            <div className="leading-tight">
+              {streak > 0 ? (
+                <>
+                  <span className="text-sm font-extrabold">{streak} дн.</span>
+                  <span className="block text-xs font-semibold text-muted-foreground">серия подряд</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-extrabold">Начни серию</span>
+                  <span className="block text-xs font-semibold text-muted-foreground">повтори сегодня</span>
+                </>
+              )}
+            </div>
+          </div>
           {isAdmin && (
             <Link href="/admin" className={linkCls('/admin')}>
               <ShieldCheck className="h-4 w-4" />

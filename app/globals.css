@@ -3,85 +3,92 @@
 @tailwind utilities;
 
 /*
-  Calm "study" theme — indigo primary, teal personality (accent/deutsch), green success.
-  Light + dark via the `.dark` class. Values are HSL channels (no hsl() wrapper)
-  so Tailwind can compose them with opacity.
+  Phase 7 — "Friendly, gently muted" (Direction B). Warm-neutral bg, muted violet
+  primary, coral/sage/amber accents. Light + dark via `.dark`. HSL channels.
 */
 @layer base {
   :root {
-    --background: 210 40% 99%;
-    --foreground: 222 47% 11%;
+    --background: 36 29% 95%;
+    --foreground: 252 14% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 252 14% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 252 14% 16%;
 
-    /* Indigo brand */
-    --primary: 243 75% 59%;
+    --primary: 248 49% 58%;
     --primary-foreground: 0 0% 100%;
 
-    /* Subtle secondary surface */
-    --secondary: 220 20% 96%;
-    --secondary-foreground: 222 30% 20%;
+    --secondary: 40 22% 93%;
+    --secondary-foreground: 252 12% 24%;
 
-    --muted: 220 20% 96%;
-    --muted-foreground: 220 12% 46%;
+    --muted: 40 22% 93%;
+    --muted-foreground: 258 8% 54%;
 
-    /* Teal personality (light hover/active surface) */
-    --accent: 174 60% 94%;
-    --accent-foreground: 175 84% 22%;
+    --accent: 252 47% 94%;
+    --accent-foreground: 248 45% 45%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 60% 40%;
+    --success: 159 53% 43%;
     --success-foreground: 0 0% 100%;
 
-    /* German-content marker (teal badge) */
-    --deutsch: 174 62% 41%;
+    --coral: 14 77% 65%;
+    --coral-foreground: 0 0% 100%;
+
+    --amber: 38 76% 57%;
+    --amber-foreground: 30 45% 20%;
+
+    --deutsch: 248 49% 58%;
     --deutsch-foreground: 0 0% 100%;
 
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
-    --ring: 243 75% 59%;
+    --border: 40 19% 91%;
+    --input: 40 19% 91%;
+    --ring: 248 49% 58%;
 
-    --radius: 0.7rem;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 222 28% 9%;
-    --foreground: 210 30% 96%;
+    --background: 252 13% 11%;
+    --foreground: 250 20% 92%;
 
-    --card: 222 25% 12%;
-    --card-foreground: 210 30% 96%;
-    --popover: 222 25% 12%;
-    --popover-foreground: 210 30% 96%;
+    --card: 252 12% 15%;
+    --card-foreground: 250 20% 92%;
+    --popover: 252 12% 15%;
+    --popover-foreground: 250 20% 92%;
 
-    --primary: 243 80% 70%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 248 52% 70%;
+    --primary-foreground: 252 30% 14%;
 
-    --secondary: 222 20% 18%;
-    --secondary-foreground: 210 30% 92%;
+    --secondary: 252 10% 20%;
+    --secondary-foreground: 250 18% 88%;
 
-    --muted: 222 18% 18%;
-    --muted-foreground: 220 14% 64%;
+    --muted: 252 10% 20%;
+    --muted-foreground: 258 10% 62%;
 
-    --accent: 175 50% 18%;
-    --accent-foreground: 174 70% 78%;
+    --accent: 250 25% 22%;
+    --accent-foreground: 248 50% 80%;
 
-    --destructive: 0 63% 50%;
+    --destructive: 0 63% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 50% 50%;
-    --success-foreground: 222 47% 11%;
+    --success: 159 48% 50%;
+    --success-foreground: 252 30% 14%;
 
-    --deutsch: 174 58% 46%;
-    --deutsch-foreground: 222 47% 11%;
+    --coral: 14 70% 66%;
+    --coral-foreground: 252 30% 14%;
 
-    --border: 222 18% 22%;
-    --input: 222 18% 22%;
-    --ring: 243 80% 70%;
+    --amber: 38 68% 60%;
+    --amber-foreground: 252 30% 14%;
+
+    --deutsch: 248 52% 70%;
+    --deutsch-foreground: 252 30% 14%;
+
+    --border: 252 10% 22%;
+    --input: 252 10% 22%;
+    --ring: 248 52% 70%;
   }
 }
 
@@ -95,9 +102,9 @@
   }
 }
 
-/* Inline marker for German learning content in the UI. */
+/* Inline marker for German learning content. */
 @layer components {
   .de {
-    @apply font-medium text-foreground underline decoration-deutsch/60 decoration-2 underline-offset-2;
+    @apply font-bold text-foreground underline decoration-deutsch/70 decoration-2 underline-offset-2;
   }
 }

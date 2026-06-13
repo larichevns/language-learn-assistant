@@ -1,19 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { Providers } from './providers';
 import { SwRegister } from '@/components/sw-register';
 import './globals.css';
 
-const inter = Inter({
+// Phase 7: Nunito (rounded, friendly) for both body and display.
+const nunito = Nunito({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-sans',
-  display: 'swap',
-});
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-display',
+  weight: ['500', '600', '700', '800', '900'],
   display: 'swap',
 });
 
@@ -42,7 +39,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${inter.variable} ${jakarta.variable}`}
+      className={nunito.variable}
     >
       <body className="min-h-dvh font-sans antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
