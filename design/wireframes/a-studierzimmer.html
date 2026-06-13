@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>LLA — Direction A · Studierzimmer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF7EF; --surface:#FFFFFF; --ink:#2C2A26; --muted:#8C857A; --hair:#E9E1D3;
+    --primary:#246B62; --primary-soft:#E4EFEC; --gold:#B5832F; --de:#246B62; --rose:#B4503E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--paper);color:var(--ink);width:1440px;height:900px;overflow:hidden}
+  .app{display:grid;grid-template-columns:248px 1fr;height:900px}
+  /* sidebar */
+  .side{border-right:1px solid var(--hair);padding:26px 20px;display:flex;flex-direction:column;gap:6px;background:#FDFBF6}
+  .brand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px}
+  .brand .logo{width:40px;height:40px;border:1.5px solid var(--ink);border-radius:9px;display:grid;place-items:center}
+  .brand b{font-family:Fraunces;font-weight:600;font-size:19px;letter-spacing:.2px}
+  .navlbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:18px 12px 8px}
+  .nav{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;color:#5a544a;font-size:14.5px;font-weight:500}
+  .nav.active{background:var(--primary-soft);color:var(--primary)}
+  .nav svg{width:18px;height:18px;stroke-width:1.7}
+  .side .foot{margin-top:auto;border-top:1px solid var(--hair);padding-top:14px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:10px}
+  /* main */
+  .main{padding:30px 40px;overflow:hidden;position:relative}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+  .top .greet h1{font-family:Fraunces;font-weight:600;font-size:30px;letter-spacing:-.01em}
+  .top .greet p{color:var(--muted);font-size:14.5px;margin-top:3px}
+  .top .tools{display:flex;align-items:center;gap:10px}
+  .pillbtn{border:1px solid var(--hair);background:var(--surface);border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:500;display:flex;gap:8px;align-items:center;color:var(--ink)}
+  .iconbtn{width:38px;height:38px;border:1px solid var(--hair);border-radius:999px;background:var(--surface);display:grid;place-items:center}
+  .iconbtn svg,.pillbtn svg{width:17px;height:17px;stroke-width:1.7}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:26px}
+  .stat{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:20px 22px;box-shadow:0 1px 2px rgba(40,35,25,.03)}
+  .stat .lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .stat .num{font-family:Fraunces;font-weight:600;font-size:38px;margin-top:10px;line-height:1}
+  .stat.feat{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .stat.feat .lab,.stat.feat .num{color:#fff}
+  .stat .ic{float:right;color:var(--gold)}
+  .stat.feat .ic{color:#bfe6df}
+  .stat svg{width:20px;height:20px;stroke-width:1.6}
+  /* grid lower */
+  .lower{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:24px}
+  .card h3{font-family:Fraunces;font-weight:600;font-size:18px;margin-bottom:4px}
+  .card .sub{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .review{display:flex;align-items:center;gap:22px}
+  .ring{width:104px;height:104px;flex:none}
+  .reviewtxt .big{font-family:Fraunces;font-size:40px;font-weight:600;line-height:1}
+  .reviewtxt small{color:var(--muted);font-size:13px}
+  .cta{margin-top:16px;background:var(--ink);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:600;font-family:Inter}
+  .wordrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--hair)}
+  .wordrow:first-of-type{border-top:none}
+  .de{font-weight:600}
+  .de u{text-decoration-color:var(--de);text-decoration-thickness:2px;text-underline-offset:3px}
+  .ru{color:var(--muted);font-size:13px}
+  .tag{font-size:11px;color:var(--primary);background:var(--primary-soft);padding:3px 9px;border-radius:999px}
+  /* assistant dock */
+  .dock{position:absolute;right:40px;bottom:30px;width:330px;background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:0 18px 50px rgba(40,35,25,.13);overflow:hidden}
+  .dockhead{display:flex;align-items:center;gap:9px;padding:14px 16px;border-bottom:1px solid var(--hair)}
+  .dockhead b{font-family:Fraunces;font-size:15px}
+  .chip{font-size:11px;color:var(--muted);border:1px solid var(--hair);padding:2px 9px;border-radius:999px}
+  .msg{margin:14px 16px;font-size:13.5px;line-height:1.5}
+  .msg.bot{background:var(--primary-soft);color:#16413b;padding:10px 13px;border-radius:12px 12px 12px 4px;max-width:88%}
+  .dockin{margin:12px 16px 16px;border:1px solid var(--hair);border-radius:12px;padding:10px 13px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+  .dockin .send{width:28px;height:28px;border-radius:8px;background:var(--primary);display:grid;place-items:center}
+  .dockin .send svg{width:15px;height:15px;color:#fff;stroke-width:2}
+  .watermark{position:absolute;right:34px;top:26px;font-family:Fraunces;font-style:italic;color:#efe7d7;font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2C2A26"><path d="M5 4h9a3 3 0 0 1 3 3v13" stroke-width="1.6"/><path d="M19 7v13H8a3 3 0 0 0-3 3V4" stroke-width="1.6"/></svg>
+    </span><b>Lingua</b></div>
+    <div class="navlbl">Учёба</div>
+    <div class="nav active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Дашборд</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V6a2 2 0 0 1 2-2h12v15"/><path d="M6 17h12"/></svg>Словарь</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16M4 12h10M4 19h16"/></svg>Грамматика</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h11l4 4v12H5z"/><path d="M9 13l2 2 4-4"/></svg>Домашки</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/></svg>Упражнения</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 3 8l9 4 9-4z"/><path d="M7 11v5c0 1 5 3 5 3s5-2 5-3v-5"/></svg>Заметки</div>
+    <div class="foot"><svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>Никита · A2</div>
+  </aside>
+  <main class="main">
+    <div class="watermark">№ Studierzimmer</div>
+    <div class="top">
+      <div class="greet"><h1>Guten Morgen, Никита</h1><p>Уровень A2 · седьмой день подряд за немецким</p></div>
+      <div class="tools">
+        <span class="pillbtn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6l-1.4-1.4M19.4 4.6 18 6"/><circle cx="12" cy="12" r="4"/></svg> Ассистент</span>
+        <span class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span>
+        <span class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat feat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a4 4 0 0 0-4 4c-1.5.8-2.5 2.3-2.5 4A4.5 4.5 0 0 0 8 19a4 4 0 0 0 8 0 4.5 4.5 0 0 0 2.5-8c0-1.7-1-3.2-2.5-4a4 4 0 0 0-4-4z"/></svg></span><div class="lab">К повторению</div><div class="num">12</div></div>
+      <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V6a2 2 0 0 1 2-2h12v15"/></svg></span><div class="lab">Слов в словаре</div><div class="num">248</div></div>
+      <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16M4 12h10M4 19h16"/></svg></span><div class="lab">Тем грамматики</div><div class="num">9</div></div>
+      <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h11l4 4v12H5z"/></svg></span><div class="lab">Домашних работ</div><div class="num">4</div></div>
+    </div>
+    <div class="lower">
+      <div class="card">
+        <h3>Сегодняшнее повторение</h3>
+        <div class="sub">Интервальные карточки, готовые к показу</div>
+        <div class="review">
+          <svg class="ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#EFE7D7" stroke-width="11"/><circle cx="60" cy="60" r="50" fill="none" stroke="#246B62" stroke-width="11" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="126" transform="rotate(-90 60 60)"/><text x="60" y="67" text-anchor="middle" font-family="Fraunces" font-size="26" fill="#2C2A26">60%</text></svg>
+          <div class="reviewtxt"><div class="big">12 карт</div><small>≈ 6 минут · последняя сессия вчера</small><br><button class="cta">Начать повторение →</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Свежие слова</h3>
+        <div class="sub">Из «Lektion 5: Perfekt»</div>
+        <div class="wordrow"><div><div class="de">das <u>Haus</u></div><div class="ru">дом · pl. Häuser</div></div><span class="tag">A1</span></div>
+        <div class="wordrow"><div><div class="de"><u>aufstehen</u></div><div class="ru">вставать · ist aufgestanden</div></div><span class="tag">A2</span></div>
+        <div class="wordrow"><div><div class="de">die <u>Rechnung</u></div><div class="ru">счёт · pl. Rechnungen</div></div><span class="tag">A2</span></div>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="dockhead"><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M5 12H3M21 12h-2"/></svg><b>Lingua</b><span class="chip">Весь курс</span></div>
+      <div class="msg bot">Объясни, когда Perfekt с <b>sein</b>?<br>— С глаголами движения и смены состояния: <b>gehen → ist gegangen</b>.</div>
+      <div class="dockin">добавь слово «der Löffel»<span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

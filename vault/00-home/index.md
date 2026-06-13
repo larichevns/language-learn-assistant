@@ -18,6 +18,7 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 ## Specs
 - [[mvp-scope-and-phases]] — approved MVP scope, hero feature, the phases + verification evidence
 - [[phase-5-adaptive-learning-loop]] — make the tutor truly adaptive + retention/journal/export (research-backed)
+- [[phase-6-design-directions]] — 3 distinct visual directions + market analysis (prototypes in `design/wireframes/`)
 - [[SPEC_TEMPLATE]] — template for new feature specs
 
 ## Knowledge
