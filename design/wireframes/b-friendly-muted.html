@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>LLA — Direction B · Friendly (muted)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* muted, grown-up palette — same friendly character, lower saturation, warm-neutral bg */
+    --bg:#F7F5F1; --surface:#FFFFFF; --ink:#2B2A30; --muted:#8C8896; --line:#ECE9E3;
+    --violet:#6E66B0; --violet-soft:#ECEAF4; --coral:#C98A6E; --coral-soft:#F2E8E1;
+    --green:#5F9C82; --green-soft:#E7EFE9; --amber:#C9A35E; --amber-soft:#F2ECDD; --de:#6E66B0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Nunito,system-ui,sans-serif;background:var(--bg);color:var(--ink);width:1440px;height:900px;overflow:hidden;font-weight:600}
+  .app{display:grid;grid-template-columns:252px 1fr;height:900px}
+  .side{background:var(--surface);padding:24px 18px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 20px}
+  .brand .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(140deg,#6E66B0,#8b80c4);display:grid;place-items:center;box-shadow:0 5px 12px rgba(110,102,176,.28)}
+  .brand b{font-size:20px;font-weight:900;letter-spacing:-.3px}
+  .nav{display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:14px;color:#6f6b7a;font-size:15px;font-weight:700}
+  .nav.active{background:var(--violet-soft);color:var(--violet)}
+  .nav svg{width:20px;height:20px;stroke-width:2.2}
+  .streak{margin-top:auto;background:var(--amber-soft);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px}
+  .streak .flame{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center}
+  .streak b{font-size:18px;font-weight:900}.streak small{color:var(--muted);font-weight:700;font-size:12px}
+  .main{padding:28px 38px;position:relative;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(10px);opacity:.42;z-index:0}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;position:relative;z-index:1}
+  .top h1{font-size:30px;font-weight:900;letter-spacing:-.5px}
+  .top p{color:var(--muted);font-weight:700;font-size:14.5px;margin-top:2px}
+  .tools{display:flex;gap:10px;align-items:center}
+  .asbtn{background:var(--violet);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-family:Nunito;font-weight:800;font-size:14px;display:flex;gap:8px;align-items:center;box-shadow:0 6px 14px rgba(110,102,176,.26)}
+  .asbtn svg{width:18px;height:18px;stroke-width:2.4}
+  .ib{width:44px;height:44px;border-radius:999px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center}
+  .ib svg{width:19px;height:19px;stroke-width:2.2}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;position:relative;z-index:1}
+  .stat{border-radius:22px;padding:20px;position:relative;overflow:hidden}
+  .stat .ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px}
+  .stat .num{font-size:34px;font-weight:900;line-height:1}
+  .stat .lab{color:var(--muted);font-weight:700;font-size:13px;margin-top:3px}
+  .s1{background:var(--violet);color:#fff}.s1 .lab{color:#e7e4f2}.s1 .ic{background:rgba(255,255,255,.18)}
+  .s2{background:var(--coral-soft)}.s2 .ic{background:var(--coral);color:#fff}.s2 .num{color:#8a5a44}
+  .s3{background:var(--green-soft)}.s3 .ic{background:var(--green);color:#fff}.s3 .num{color:#3f6f5a}
+  .s4{background:var(--amber-soft)}.s4 .ic{background:var(--amber);color:#fff}.s4 .num{color:#7e6433}
+  .stat svg{width:22px;height:22px;stroke-width:2.2}
+  .lower{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;position:relative;z-index:1}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 8px 22px rgba(43,42,48,.04)}
+  .card h3{font-size:19px;font-weight:900;margin-bottom:3px}.card .sub{color:var(--muted);font-weight:700;font-size:13.5px;margin-bottom:18px}
+  .review{display:flex;align-items:center;gap:22px}
+  .ring{width:120px;height:120px;flex:none}
+  .review .big{font-size:30px;font-weight:900}.review small{color:var(--muted);font-weight:700;font-size:13px}
+  .cta{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:16px;padding:14px 26px;font-family:Nunito;font-weight:800;font-size:15px;box-shadow:0 6px 13px rgba(95,156,130,.28)}
+  .word{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:16px;padding:13px 15px;margin-bottom:10px}
+  .word .de{font-weight:800}.word .de u{text-decoration-color:var(--de);text-decoration-thickness:2.5px;text-underline-offset:3px}
+  .word .ru{color:var(--muted);font-weight:700;font-size:12.5px}
+  .pill{font-weight:800;font-size:11px;color:var(--violet);background:var(--violet-soft);padding:5px 11px;border-radius:999px}
+  .spk{width:30px;height:30px;border-radius:10px;background:var(--violet-soft);display:grid;place-items:center;margin-left:8px}
+  .spk svg{width:15px;height:15px;color:var(--violet);stroke-width:2.4}
+  .dock{position:absolute;right:38px;bottom:28px;width:340px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 46px rgba(43,42,48,.14);overflow:hidden;z-index:2}
+  .dh{display:flex;align-items:center;gap:9px;padding:16px 18px;background:linear-gradient(120deg,#6E66B0,#8b80c4);color:#fff}
+  .dh b{font-weight:900;font-size:16px}.dh .chip{font-weight:700;font-size:11px;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px}
+  .bubble{margin:14px 18px;background:var(--violet-soft);color:#3a3650;padding:12px 14px;border-radius:16px 16px 16px 5px;font-size:13.5px;font-weight:700;line-height:1.5;max-width:88%}
+  .din{margin:12px 18px 18px;background:var(--bg);border-radius:16px;padding:12px 15px;color:var(--muted);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+  .din .s{width:32px;height:32px;border-radius:11px;background:var(--violet);display:grid;place-items:center}.din .s svg{width:16px;color:#fff;stroke-width:2.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo"><svg width="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M5 5h9a3 3 0 0 1 3 3v11"/><path d="M19 8v11H8a3 3 0 0 0-3 3V5"/></svg></span><b>Lingua</b></div>
+    <div class="nav active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Дашборд</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V6a2 2 0 0 1 2-2h13v15"/><path d="M6 17h13"/></svg>Словарь</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 5h14M5 12h9M5 19h14"/></svg>Грамматика</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h10l4 4v12H6z"/><path d="M9 13l2 2 4-4"/></svg>Домашки</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg>Упражнения</div>
+    <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 3 8l9 4 9-4z"/><path d="M7 11v5c0 1 5 3 5 3s5-2 5-3v-5"/></svg>Заметки</div>
+    <div class="streak"><span class="flame"><svg width="22" viewBox="0 0 24 24" fill="#C98A6E" stroke="#C98A6E"><path d="M12 2c1 3-1 4-1 6 0 1 1 2 2 2s2-1 2-3c2 2 3 4 3 7a6 6 0 0 1-12 0c0-3 2-5 4-7 1-1 1-1 2-2z"/></svg></span><div><b>7 дней</b><br><small>серия подряд</small></div></div>
+  </aside>
+  <main class="main">
+    <div class="blob" style="width:240px;height:240px;background:#EFE4DC;right:120px;top:-60px"></div>
+    <div class="blob" style="width:200px;height:200px;background:#E7E3F2;right:-40px;top:160px"></div>
+    <div class="top">
+      <div><h1>Привет, Никита 👋</h1><p>Уровень A2 · давай разберём 12 карточек</p></div>
+      <div class="tools">
+        <button class="asbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5z"/></svg>Ассистент</button>
+        <span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span>
+        <span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat s1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a4 4 0 0 0-4 4c-1.5.8-2.5 2.3-2.5 4A4.5 4.5 0 0 0 8 19a4 4 0 0 0 8 0 4.5 4.5 0 0 0 2.5-8c0-1.7-1-3.2-2.5-4a4 4 0 0 0-4-4z"/></svg></div><div class="num">12</div><div class="lab">К повторению</div></div>
+      <div class="stat s2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V6a2 2 0 0 1 2-2h13v15"/></svg></div><div class="num">248</div><div class="lab">Слов в словаре</div></div>
+      <div class="stat s3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 5h14M5 12h9M5 19h14"/></svg></div><div class="num">9</div><div class="lab">Тем грамматики</div></div>
+      <div class="stat s4"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h10l4 4v12H6z"/></svg></div><div class="num">4</div><div class="lab">Домашних работ</div></div>
+    </div>
+    <div class="lower">
+      <div class="card">
+        <h3>Время повторить 🧠</h3><div class="sub">12 карточек ждут · примерно 6 минут</div>
+        <div class="review">
+          <svg class="ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#ECEAF4" stroke-width="13"/><circle cx="60" cy="60" r="50" fill="none" stroke="#6E66B0" stroke-width="13" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="126" transform="rotate(-90 60 60)"/><text x="60" y="68" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="27" fill="#2B2A30">60%</text></svg>
+          <div><div class="big">12 карт</div><small>сегодня · последняя серия вчера</small><br><button class="cta">Начать →</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Новые слова</h3><div class="sub">Lektion 5 · Perfekt</div>
+        <div class="word"><div style="display:flex;align-items:center"><div><div class="de">das <u>Haus</u></div><div class="ru">дом</div></div><span class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5 6 9H3v6h3l5 4zM16 9a5 5 0 0 1 0 6"/></svg></span></div><span class="pill">A1</span></div>
+        <div class="word"><div style="display:flex;align-items:center"><div><div class="de"><u>aufstehen</u></div><div class="ru">вставать</div></div><span class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5 6 9H3v6h3l5 4zM16 9a5 5 0 0 1 0 6"/></svg></span></div><span class="pill">A2</span></div>
+        <div class="word"><div style="display:flex;align-items:center"><div><div class="de">die <u>Rechnung</u></div><div class="ru">счёт</div></div><span class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5 6 9H3v6h3l5 4zM16 9a5 5 0 0 1 0 6"/></svg></span></div><span class="pill">A2</span></div>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="dh"><svg width="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5z"/></svg><b>Lingua</b><span class="chip">Весь курс</span></div>
+      <div class="bubble">Готово — предлагаю добавить <b>der Löffel</b> (ложка), pl. Löffel. Карточка готова, жми «Применить».</div>
+      <div class="din">добавь слово «der Löffel»<span class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
