@@ -1,0 +1,761 @@
+// LanguageLearnAssistant — single source of truth.
+// Every AI envelope is rebuilt from these tables (see vault/atlas/architecture.md).
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ───────────────────────── AUTH (Auth.js v5 / Prisma adapter) ─────────────────────────
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String? // credentials provider (null for pure-OAuth)
+  role          Role      @default(USER)
+  tier          String    @default("free") // rate-limit / budget tier
+  locale        String    @default("ru")
+
+  accounts       Account[]
+  sessions       Session[]
+  learnerProfile LearnerProfile?
+  courses        Course[]
+  vocabEntries   VocabEntry[]
+  srsCards       SrsCard[]
+  grammarTopics  GrammarTopic[]
+  homeworks      Homework[]
+  classNotes     ClassNote[]
+  exerciseSets   ExerciseSet[]
+  chatThreads    ChatThread[]
+  proposals      Proposal[]
+  usageEvents    UsageEvent[]
+  abuseEvents    AbuseEvent[]
+  preferences    LearnerPreference[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ───────────────────────── LEARNER DOMAIN (envelope 02–03 source of truth) ─────────────────────────
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum Formality {
+  DU
+  SIE
+  BOTH
+}
+
+model Course {
+  id         String  @id @default(cuid())
+  userId     String
+  title      String  @default("Deutsch")
+  targetLang String  @default("de")
+  nativeLang String  @default("ru")
+  isActive   Boolean @default(true)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  units      Unit[]
+  homeworks  Homework[]
+  classNotes ClassNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isActive])
+}
+
+model LearnerProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  nativeLang      String    @default("ru")
+  targetLang      String    @default("de")
+  cefrLevel       CefrLevel @default(A1)
+  formalityPref   Formality @default(BOTH)
+  goalsJson       Json? // ["pass Goethe B1", "work German"]
+  weakAreasJson   Json? // ["der/die/das", "Perfekt sein/haben", "Wechselpräpositionen"]
+  explainInNative Boolean   @default(true)
+  dailyGoalCards  Int       @default(20)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LearnerPreference {
+  id     String @id @default(cuid())
+  userId String
+  key    String // "tone", "correction_style", "example_domain"
+  value  String // <data>-wrapped at envelope build
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+}
+
+// Chapter analog (envelope layer 03, cache-marked).
+model Unit {
+  id         String     @id @default(cuid())
+  courseId   String
+  title      String // "Lektion 5: Perfekt"
+  orderIndex Int        @default(0)
+  cefrLevel  CefrLevel?
+  premise    String?    @db.Text // capped "source of truth" (assignment / lesson text)
+  summary    String?    @db.Text // rolling LessonSummary
+  isCurrent  Boolean    @default(false)
+
+  course        Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  grammarTopics GrammarTopic[]
+  vocabEntries  VocabEntry[]
+  exerciseSets  ExerciseSet[]
+  homeworks     Homework[]
+  classNotes    ClassNote[]
+  vocabIndex    VocabUnitIndex[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId, orderIndex])
+  @@index([courseId, isCurrent])
+}
+
+// ───────────────────────── VOCAB (roster analog, German-specific) ─────────────────────────
+enum PartOfSpeech {
+  NOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+  PRONOUN
+  PREPOSITION
+  CONJUNCTION
+  ARTICLE
+  NUMERAL
+  INTERJECTION
+  PHRASE
+}
+
+enum Gender {
+  DER
+  DIE
+  DAS
+}
+
+enum Auxiliary {
+  HABEN
+  SEIN
+}
+
+enum GrammaticalCase {
+  NOMINATIV
+  AKKUSATIV
+  DATIV
+  GENITIV
+}
+
+model VocabEntry {
+  id            String       @id @default(cuid())
+  userId        String
+  unitId        String?
+  lemma         String // "gehen", "Haus"
+  pos           PartOfSpeech
+  translationRu String
+
+  // noun
+  gender       Gender? // der/die/das
+  pluralForm   String? // "Häuser"
+  genitiveForm String? // "des Hauses"
+
+  // verb
+  isSeparable      Boolean?         @default(false)
+  separablePrefix  String? // "auf"
+  auxiliary        Auxiliary? // Perfekt aux haben/sein
+  partizipII       String? // "gegangen"
+  presentIrregular String? // "er gibt"
+  praeteritum      String? // "ging"
+  isReflexive      Boolean?         @default(false)
+  governsCase      GrammaticalCase? // verb/prep rection ("helfen" + Dativ)
+
+  // shared
+  examplesJson Json? // [{ de, ru }]
+  tagsJson     Json? // ["A1", "Familie"]
+  cefrLevel    CefrLevel?
+  notes        String?    @db.Text
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit          Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  srsCard       SrsCard?
+  exerciseItems ExerciseItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lemma, pos])
+  @@index([userId, unitId])
+  @@index([userId, pos])
+}
+
+// "Which words appear in which lesson" for cross-lesson context.
+model VocabUnitIndex {
+  id           String @id @default(cuid())
+  vocabEntryId String
+  unitId       String
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([vocabEntryId, unitId])
+  @@index([unitId])
+}
+
+// ───────────────────────── SRS (SM-2; FSRS-ready) ─────────────────────────
+enum SrsState {
+  NEW
+  LEARNING
+  REVIEW
+  LAPSED
+  SUSPENDED
+}
+
+enum ReviewDirection {
+  DE_TO_RU
+  RU_TO_DE
+  PRODUCE_ARTICLE
+  PRODUCE_PLURAL
+}
+
+model SrsCard {
+  id             String    @id @default(cuid())
+  userId         String
+  vocabEntryId   String    @unique
+  state          SrsState  @default(NEW)
+  easeFactor     Float     @default(2.5)
+  intervalDays   Int       @default(0)
+  repetitions    Int       @default(0)
+  lapses         Int       @default(0)
+  dueAt          DateTime  @default(now())
+  lastReviewedAt DateTime?
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabEntry VocabEntry @relation(fields: [vocabEntryId], references: [id], onDelete: Cascade)
+  reviews    Review[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, dueAt])
+  @@index([userId, state])
+}
+
+model Review {
+  id           String          @id @default(cuid())
+  srsCardId    String
+  grade        Int // SM-2 quality 0–5 (Again/Hard/Good/Easy mapped)
+  direction    ReviewDirection @default(DE_TO_RU)
+  prevInterval Int
+  newInterval  Int
+  prevEase     Float
+  newEase      Float
+  durationMs   Int?
+  reviewedAt   DateTime        @default(now())
+
+  srsCard SrsCard @relation(fields: [srsCardId], references: [id], onDelete: Cascade)
+
+  @@index([srsCardId, reviewedAt])
+}
+
+// ───────────────────────── GRAMMAR (lore analog) ─────────────────────────
+enum GrammarCategory {
+  ARTICLE
+  CASE
+  TENSE
+  VERB_CONJUGATION
+  SEPARABLE_VERB
+  MODAL_VERB
+  PREPOSITION
+  PRONOUN
+  ADJECTIVE_DECLENSION
+  WORD_ORDER
+  NEGATION
+  SUBJUNCTIVE
+  PASSIVE
+  OTHER
+}
+
+model GrammarTopic {
+  id             String          @id @default(cuid())
+  userId         String
+  unitId         String?
+  title          String // "Perfekt mit haben/sein"
+  category       GrammarCategory
+  cefrLevel      CefrLevel?
+  explanationRu  String          @db.Text
+  examplesJson   Json? // [{ de, ru, highlight }]
+  rulesJson      Json? // structured rules / case tables
+  pitfallsJson   Json? // ["Bewegungsverben → sein"]
+  masteryScore   Float           @default(0) // 0..1, feeds envelope layer 02
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  exerciseSets ExerciseSet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, category])
+  @@index([userId, unitId])
+}
+
+// ───────────────────────── HOMEWORK (intake → AI structure / correction) ─────────────────────────
+enum HomeworkStatus {
+  DRAFT
+  SUBMITTED
+  STRUCTURED
+  CORRECTED
+  ARCHIVED
+}
+
+enum HomeworkSource {
+  TEXT
+  IMAGE
+  VOICE
+}
+
+model Homework {
+  id              String         @id @default(cuid())
+  userId          String
+  courseId        String?
+  unitId          String?
+  title           String?
+  source          HomeworkSource @default(TEXT)
+  rawInput        String         @db.Text // verbatim learner text / OCR
+  imageUrl        String?
+  structuredJson  Json? // { tasks: [...], topics: [...] }
+  correctionsJson Json? // [{ original, corrected, errorType, explanationRu, case?, gender? }]
+  errorSummaryJson Json? // counts per error type
+  status          HomeworkStatus @default(DRAFT)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  exerciseSets ExerciseSet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, courseId])
+}
+
+// ───────────────────────── CLASS NOTES ─────────────────────────
+model ClassNote {
+  id             String    @id @default(cuid())
+  userId         String
+  courseId       String?
+  unitId         String?
+  title          String?
+  rawInput       String    @db.Text
+  structuredJson Json? // extracted vocab / grammar / todos
+  lessonDate     DateTime?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, courseId])
+}
+
+// ───────────────────────── EXERCISES (AI-generated quizzes) ─────────────────────────
+enum ExerciseType {
+  CLOZE
+  TRANSLATION_RU_DE
+  TRANSLATION_DE_RU
+  CONJUGATION
+  ARTICLE_GENDER
+  PLURAL_FORM
+  CASE_DECLENSION
+  SEPARABLE_VERB
+  PERFEKT_FORM
+  MCQ
+  WORD_ORDER
+  MATCHING
+}
+
+enum ExerciseStatus {
+  GENERATED
+  IN_PROGRESS
+  GRADED
+}
+
+enum SourceObjectType {
+  UNIT
+  GRAMMAR_TOPIC
+  VOCAB_LIST
+  HOMEWORK
+  MANUAL
+}
+
+model ExerciseSet {
+  id             String           @id @default(cuid())
+  userId         String
+  unitId         String?
+  grammarTopicId String?
+  homeworkId     String?
+  title          String
+  sourceType     SourceObjectType @default(MANUAL)
+  cefrLevel      CefrLevel?
+  status         ExerciseStatus   @default(GENERATED)
+  score          Float?
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit         Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  grammarTopic GrammarTopic?  @relation(fields: [grammarTopicId], references: [id], onDelete: SetNull)
+  homework     Homework?      @relation(fields: [homeworkId], references: [id], onDelete: SetNull)
+  items        ExerciseItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+model ExerciseItem {
+  id                    String       @id @default(cuid())
+  exerciseSetId         String
+  vocabEntryId          String?
+  type                  ExerciseType
+  orderIndex            Int          @default(0)
+  prompt                String       @db.Text
+  promptMetaJson        Json? // { tense, person, case }
+  optionsJson           Json? // MCQ choices
+  answer                String       @db.Text
+  acceptableAnswersJson Json?
+  userAnswer            String?      @db.Text
+  isCorrect             Boolean?
+  feedbackRu            String?      @db.Text
+  answeredAt            DateTime?
+
+  exerciseSet ExerciseSet @relation(fields: [exerciseSetId], references: [id], onDelete: Cascade)
+  vocabEntry  VocabEntry? @relation(fields: [vocabEntryId], references: [id], onDelete: SetNull)
+
+  @@index([exerciseSetId, orderIndex])
+}
+
+// ───────────────────────── CHAT (scope-per-object, envelope layer 05) ─────────────────────────
+enum ScopeType {
+  GLOBAL
+  COURSE
+  UNIT
+  VOCAB_ENTRY
+  VOCAB_LIST
+  GRAMMAR_TOPIC
+  HOMEWORK
+  CLASS_NOTE
+  EXERCISE_SET
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatThread {
+  id              String    @id @default(cuid())
+  userId          String
+  scopeType       ScopeType
+  scopeId         String? // null for GLOBAL
+  title           String?
+  threadSummary   String?   @db.Text
+  summaryWatermark Int      @default(0) // # turns summarized
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+  proposals Proposal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scopeType, scopeId]) // one thread per object
+  @@index([userId, scopeType])
+}
+
+model ChatMessage {
+  id           String   @id @default(cuid())
+  threadId     String
+  role         ChatRole
+  content      String   @db.Text
+  metaJson     Json? // tokens, tool calls, model id
+  isSummarized Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+}
+
+// ───────────────────────── PROPOSAL (propose/Apply — writes are proposals only) ─────────────────────────
+enum ProposalTargetType {
+  VOCAB_ENTRY
+  GRAMMAR_TOPIC
+  HOMEWORK_CORRECTION
+  CLASS_NOTE
+  EXERCISE_SET
+  UNIT
+  LEARNER_PROFILE
+  LEARNER_PREFERENCE
+  SRS_CARD
+}
+
+enum ProposalStatus {
+  PENDING
+  APPLIED
+  REFINED
+  DISCARDED
+  SUPERSEDED
+}
+
+enum ProposalOp {
+  CREATE
+  UPDATE
+}
+
+model Proposal {
+  id              String             @id @default(cuid())
+  userId          String
+  threadId        String?
+  targetType      ProposalTargetType
+  targetId        String? // null on CREATE, set on UPDATE
+  targetField     String? // optional single-field edit
+  op              ProposalOp         @default(CREATE)
+  summary         String // human-readable card title (ru)
+  payloadJson     Json // typed payload (see PLAN §3.4)
+  status          ProposalStatus     @default(PENDING)
+  appliedAt       DateTime?
+  appliedEntityId String? // id of created/updated row after Apply
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread ChatThread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, status])
+  @@index([threadId])
+}
+
+// ───────────────────────── AI INFRA (ported from ToonyGamy) ─────────────────────────
+model ProviderConfig {
+  id              String    @id @default(cuid())
+  slug            String    @unique // "gemini", "openai"
+  displayName     String
+  baseUrl         String?
+  apiKeyEncrypted String? // aes-256-gcm at rest
+  isEnabled       Boolean   @default(false)
+  capabilitiesJson Json? // { text, vision, imageGen }
+  healthStatus    String    @default("unknown") // up | down | unknown
+  healthCheckedAt DateTime?
+  priority        Int       @default(0)
+  configJson      Json?
+
+  models ModelConfig[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ModelConfig {
+  id               String  @id @default(cuid())
+  providerId       String
+  modelId          String // "gemini-2.5-flash"
+  displayName      String
+  isEnabled        Boolean @default(true)
+  pricingJson      Json? // { input, output, cacheRead, cacheCreate, perImage }
+  capabilitiesJson Json? // { vision, tools, thinking, imageGen }
+  contextWindow    Int?
+
+  provider ProviderConfig @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  routings ModelRouting[]
+
+  @@unique([providerId, modelId])
+}
+
+model FeatureFlag {
+  id            String  @id @default(cuid())
+  slug          String  @unique // "tutor_chat", "homework_correct", "exercise_generate", ...
+  name          String
+  category      String?
+  operationType String  @default("text_completion")
+  description   String?
+  inputSchemaJson Json?
+  isActive      Boolean @default(true)
+
+  routings  ModelRouting[]
+  templates PromptTemplate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ModelRouting {
+  id                String  @id @default(cuid())
+  featureId         String
+  modelId           String
+  priority          Int     @default(0) // DESC ordering
+  isEnabled         Boolean @default(true)
+  configOverrideJson Json? // temperature, max_tokens, reasoningEffort
+
+  feature FeatureFlag @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  model   ModelConfig @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@unique([featureId, modelId])
+  @@index([featureId, priority])
+}
+
+model PromptTemplate {
+  id                 String   @id @default(cuid())
+  featureId          String
+  promptType         String   @default("default")
+  version            Int      @default(1)
+  systemPrompt       String   @db.Text
+  userPromptTemplate String   @db.Text // {{variable}} placeholders
+  variablesJson      Json?
+  parametersJson     Json?
+  isActive           Boolean  @default(false)
+  createdBy          String?
+
+  feature FeatureFlag @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([featureId, promptType, version])
+  @@index([featureId, isActive])
+}
+
+model PromptVariable {
+  id             String  @id @default(cuid())
+  key            String  @unique // "language", "level", "native_lang"
+  name           String
+  varType        String // string | number | enum
+  enumValuesJson Json?
+  validationRegex String?
+  defaultValue   String?
+  description    String?
+  isRequired     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model UsageEvent {
+  id              String  @id @default(cuid())
+  userId          String?
+  requestId       String? // X-AI-Request-Id idempotency
+  featureSlug     String
+  operationType   String
+  providerSlug    String?
+  modelId         String?
+  inputTokens     Int     @default(0)
+  outputTokens    Int     @default(0)
+  cachedTokens    Int     @default(0)
+  thinkingTokens  Int     @default(0)
+  estimatedCostUsd Float  @default(0)
+  status          String  @default("ok") // ok | error
+  errorMessage    String?
+  latencyMs       Int?
+  isBackground    Boolean @default(false)
+  requestMetaJson Json?
+  responseMetaJson Json?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([featureSlug, createdAt])
+  @@index([requestId])
+}
+
+model RateLimit {
+  id                   String @id @default(cuid())
+  tier                 String // maps to User.tier ("free", "pro", "admin")
+  operationType        String @default("all")
+  maxRequestsPerMinute Int    @default(5)
+  maxRequestsPerDay    Int    @default(200)
+  maxTokensPerDay      Int    @default(500000)
+
+  @@unique([tier, operationType])
+}
+
+model AbuseEvent {
+  id             String   @id @default(cuid())
+  userId         String?
+  featureSlug    String?
+  severity       String // "block" | "warn"
+  rulesJson      Json // matched rule names
+  contentPreview String // first 50 chars only
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
