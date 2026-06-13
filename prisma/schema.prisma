@@ -42,6 +42,10 @@ model User {
   usageEvents    UsageEvent[]
   abuseEvents    AbuseEvent[]
   preferences    LearnerPreference[]
+  attempts       Attempt[]
+  homeworkErrors HomeworkError[]
+  timelineEvents TimelineEvent[]
+  grammarCards   GrammarCard[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -129,9 +133,14 @@ model LearnerProfile {
   cefrLevel       CefrLevel @default(A1)
   formalityPref   Formality @default(BOTH)
   goalsJson       Json? // ["pass Goethe B1", "work German"]
-  weakAreasJson   Json? // ["der/die/das", "Perfekt sein/haben", "Wechselpräpositionen"]
+  weakAreasJson   Json? // derived cache, rewritten by the nightly rollup (Slice 8) from logs+decay
   explainInNative Boolean   @default(true)
   dailyGoalCards  Int       @default(20)
+  desiredRetention Float    @default(0.9) // FSRS target recall (0.85–0.95)
+  // Nightly rollup (Slice 8): freshness stamp + best-effort weekly note.
+  weakAreasComputedAt DateTime?
+  progressNoteRu      String?   @db.Text // weekly note in the learner's native language (field name is legacy)
+  progressNoteAt      DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -242,7 +251,7 @@ model VocabEntry {
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   unit          Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  srsCard       SrsCard?
+  srsCards      SrsCard[] // one per ReviewDirection (minimum-information principle)
   exerciseItems ExerciseItem[]
 
   createdAt DateTime @default(now())
@@ -282,16 +291,21 @@ enum ReviewDirection {
 }
 
 model SrsCard {
-  id             String    @id @default(cuid())
+  id             String          @id @default(cuid())
   userId         String
-  vocabEntryId   String    @unique
-  state          SrsState  @default(NEW)
-  easeFactor     Float     @default(2.5)
-  intervalDays   Int       @default(0)
-  repetitions    Int       @default(0)
-  lapses         Int       @default(0)
-  dueAt          DateTime  @default(now())
+  vocabEntryId   String
+  direction      ReviewDirection @default(DE_TO_RU) // separate memory per direction
+  state          SrsState        @default(NEW)
+  easeFactor     Float           @default(2.5)
+  intervalDays   Int             @default(0)
+  repetitions    Int             @default(0)
+  lapses         Int             @default(0)
+  dueAt          DateTime        @default(now())
   lastReviewedAt DateTime?
+  // FSRS (Slice 5) — null until the card's first FSRS review; SM-2 columns above kept as legacy/export.
+  stability      Float?
+  difficulty     Float?
+  learningSteps  Int             @default(0)
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   vocabEntry VocabEntry @relation(fields: [vocabEntryId], references: [id], onDelete: Cascade)
@@ -299,6 +313,7 @@ model SrsCard {
 
   createdAt DateTime @default(now())
 
+  @@unique([vocabEntryId, direction])
   @@index([userId, dueAt])
   @@index([userId, state])
 }
@@ -349,17 +364,43 @@ model GrammarTopic {
   examplesJson   Json? // [{ de, ru, highlight }]
   rulesJson      Json? // structured rules / case tables
   pitfallsJson   Json? // ["Bewegungsverben → sein"]
-  masteryScore   Float           @default(0) // 0..1, feeds envelope layer 02
+  masteryScore   Float           @default(0) // 0..1, feeds envelope layer 02 (BKT p(L))
+  masteryUpdatedAt DateTime      @default(now()) // bumped ONLY by BKT — decay anchor (Phase 5)
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   exerciseSets ExerciseSet[]
+  card         GrammarCard?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, category])
   @@index([userId, unitId])
+}
+
+// Spaced-repetition card for a grammar topic (Slice 6) — same FSRS engine as
+// SrsCard; each review is a production task, self-graded. See phase-5-implementation-plan §5.2.
+model GrammarCard {
+  id             String    @id @default(cuid())
+  userId         String
+  grammarTopicId String    @unique
+  state          SrsState  @default(NEW)
+  stability      Float?
+  difficulty     Float?
+  learningSteps  Int       @default(0)
+  easeFactor     Float     @default(2.5) // legacy parity (unused by FSRS)
+  intervalDays   Int       @default(0)
+  repetitions    Int       @default(0)
+  lapses         Int       @default(0)
+  dueAt          DateTime  @default(now())
+  lastReviewedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grammarTopic GrammarTopic @relation(fields: [grammarTopicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueAt])
 }
 
 // ───────────────────────── HOMEWORK (intake → AI structure / correction) ─────────────────────────
@@ -395,12 +436,105 @@ model Homework {
   course       Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
   unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   exerciseSets ExerciseSet[]
+  errors       HomeworkError[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, status])
   @@index([userId, courseId])
+}
+
+// ───────────────────────── ADAPTIVE LOOP (Phase 5) ─────────────────────────
+// Append-only per-attempt log + per-mistake rows. Source of truth for BKT
+// mastery, error-over-time metrics, and (later) FSRS — never overwritten.
+// See vault/specs/phase-5-implementation-plan.md §2-3.
+enum AttemptSource {
+  EXERCISE_ITEM
+  SRS_REVIEW
+  HOMEWORK
+  CHAT_DRILL
+}
+
+model Attempt {
+  id             String           @id @default(cuid())
+  userId         String
+  source         AttemptSource
+  targetId       String // ExerciseItem.id | SrsCard.id | Homework.id
+  vocabEntryId   String?
+  grammarTopicId String? // resolved skill for BKT
+  category       GrammarCategory? // denormalized for fast error-by-category metrics
+  direction      ReviewDirection?
+  isCorrect      Boolean
+  grade          Int? // 0–5 when graded on a scale (SRS); null for binary
+  errorTypeJson  Json?
+  durationMs     Int?
+  attemptedAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, attemptedAt])
+  @@index([userId, grammarTopicId])
+  @@index([userId, category, attemptedAt])
+  @@index([userId, isCorrect, attemptedAt])
+}
+
+enum HomeworkErrorType {
+  KASUS
+  GENUS
+  NUMERUS
+  WORTSTELLUNG
+  VERBKONJUGATION
+  PRAEPOSITION
+  ARTIKEL
+  RECHTSCHREIBUNG
+  ZEITFORM
+  SONSTIGES
+}
+
+model HomeworkError {
+  id             String            @id @default(cuid())
+  userId         String
+  homeworkId     String
+  errorType      HomeworkErrorType
+  original       String            @db.Text
+  corrected      String            @db.Text
+  explanationRu  String            @db.Text
+  grammarTopicId String?
+  createdAt      DateTime          @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homework Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([homeworkId])
+}
+
+// Chronological journal read-model (Slice 4). Append-only projection over
+// existing timestamps; the page renders it as a feed + derived metrics come
+// from the logs (Review/Attempt/SrsCard), never from authored numbers.
+enum TimelineEventType {
+  CARD_MATURED
+  UNIT_COMPLETED
+  HOMEWORK_CORRECTED
+  CEFR_CHANGED
+  GOAL_REACHED
+  STREAK_MILESTONE
+  WEAK_AREA_CLEARED
+}
+
+model TimelineEvent {
+  id          String            @id @default(cuid())
+  userId      String
+  type        TimelineEventType
+  refType     String?
+  refId       String?
+  payloadJson Json?
+  occurredAt  DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
 }
 
 // ───────────────────────── CLASS NOTES ─────────────────────────

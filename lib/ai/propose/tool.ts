@@ -47,7 +47,7 @@ export const proposeToolDecl: ToolDecl = {
       payload: {
         type: 'STRING',
         description:
-          "A JSON object encoded as a string with the COMPLETE content. Shape depends on target_type. For VOCAB_ENTRY: {lemma, pos (NOUN|VERB|ADJECTIVE|...), translationRu, gender (the ARTICLE 'DER'|'DIE'|'DAS' for nouns — never 'masculine'), pluralForm, genitiveForm, isSeparable, separablePrefix, auxiliary ('HABEN'|'SEIN'), partizipII, praeteritum, governsCase ('NOMINATIV'|'AKKUSATIV'|'DATIV'|'GENITIV'), cefrLevel ('A1'..'C2'), tags:[...], examples:[{de,ru}]}.",
+          "A JSON object encoded as a string with the COMPLETE content. Shape depends on target_type. For VOCAB_ENTRY: {lemma, pos (NOUN|VERB|ADJECTIVE|...), translationRu, gender (the ARTICLE 'DER'|'DIE'|'DAS' for nouns — never 'masculine'), pluralForm, genitiveForm, isSeparable, separablePrefix, auxiliary ('HABEN'|'SEIN'), partizipII, praeteritum, governsCase ('NOMINATIV'|'AKKUSATIV'|'DATIV'|'GENITIV'), cefrLevel ('A1'..'C2'), tags:[...], examples:[{de,ru}]}. For HOMEWORK_CORRECTION: {corrections:[{original, corrected, errorType (Kasus|Genus|Numerus|Wortstellung|Verbkonjugation|Präposition|Artikel|Rechtschreibung|Zeitform|Sonstiges), explanationRu}]} — ALWAYS a `corrections` ARRAY (one entry per mistake); the homework is bound automatically, do not invent an id. For EXERCISE_SET: {title, cefrLevel, items:[{type (CLOZE|MCQ|TRANSLATION_RU_DE|TRANSLATION_DE_RU|ARTICLE_GENDER|PERFEKT_FORM|CONJUGATION|WORD_ORDER|CASE_DECLENSION|PLURAL_FORM|SEPARABLE_VERB|MATCHING), prompt, answer, acceptableAnswers:[...], explanationRu}]} — the field is `items` with `prompt`+`answer`.",
       },
     },
     required: ['target_type', 'summary', 'payload'],
@@ -101,38 +101,125 @@ export const GrammarTopicPayload = z.object({
   pitfalls: z.array(z.string()).nullish(),
 });
 
-export const HomeworkCorrectionPayload = z.object({
-  homeworkId: z.string().nullish(),
-  structured: z.unknown().nullish(),
-  corrections: z.array(
-    z.object({
-      original: z.string(),
-      corrected: z.string(),
-      errorType: z.string(),
-      case: z.string().nullish(),
-      gender: z.string().nullish(),
-      explanationRu: z.string(),
-    }),
-  ),
-  errorSummary: z.record(z.number()).nullish(),
-});
+// The model emits these payloads as free-form JSON. It reliably uses sensible
+// but non-canonical key names (`explanation`, `exercises`, `question`,
+// `correctAnswer`) and, for corrections, a flat single object (it is told to
+// send "one proposal per mistake"). Normalize those shapes to the canonical
+// schema BEFORE validation so a correct answer isn't rejected on a naming quirk
+// (same defensive pattern as `genderField` above). See debugging note
+// [[propose-Apply-500-на-вложенных-payload-из-за-формы-модели]].
+const rec = (v: unknown): Record<string, unknown> | null =>
+  v != null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+const firstString = (...vs: unknown[]): string => {
+  for (const v of vs) if (typeof v === 'string' && v.length) return v;
+  return '';
+};
 
-export const ExerciseSetPayload = z.object({
-  title: z.string(),
-  sourceType: z.string().nullish(),
-  cefrLevel: z.string().nullish(),
-  items: z.array(
-    z.object({
-      type: z.string(),
-      prompt: z.string(),
-      promptMeta: z.unknown().nullish(),
-      options: z.array(z.string()).nullish(),
-      answer: z.string(),
-      acceptableAnswers: z.array(z.string()).nullish(),
-      explanationRu: z.string().nullish(),
-    }),
-  ),
-});
+function normCorrection(c: unknown): unknown {
+  const r = rec(c);
+  if (!r) return c;
+  return {
+    original: firstString(r.original, r.from, r.wrong),
+    corrected: firstString(r.corrected, r.correction, r.to, r.fixed),
+    errorType: firstString(r.errorType, r.type, r.category) || 'Sonstiges',
+    case: r.case ?? null,
+    gender: r.gender ?? null,
+    explanationRu: firstString(r.explanationRu, r.explanation, r.explanationRU, r.reason),
+  };
+}
+function normHomeworkCorrection(v: unknown): unknown {
+  const o = rec(v);
+  if (!o) return v;
+  let arr: unknown = o.corrections;
+  if (!Array.isArray(arr)) {
+    const single = rec(o.correction) ?? ((o.original ?? o.corrected ?? o.errorType) != null ? o : null);
+    arr = single ? [single] : [];
+  }
+  return { ...o, corrections: (arr as unknown[]).map(normCorrection) };
+}
+
+const EXERCISE_TYPES = new Set([
+  'CLOZE', 'TRANSLATION_RU_DE', 'TRANSLATION_DE_RU', 'CONJUGATION', 'ARTICLE_GENDER',
+  'PLURAL_FORM', 'CASE_DECLENSION', 'SEPARABLE_VERB', 'PERFEKT_FORM', 'MCQ', 'WORD_ORDER', 'MATCHING',
+]);
+const EXERCISE_TYPE_SYNONYMS: Record<string, string> = {
+  FILL_IN_THE_BLANK: 'CLOZE', FILL_IN_BLANK: 'CLOZE', FILL_IN: 'CLOZE', FILL_BLANK: 'CLOZE',
+  GAP_FILL: 'CLOZE', GAP: 'CLOZE', BLANK: 'CLOZE', FILL: 'CLOZE', LUECKENTEXT: 'CLOZE',
+  MULTIPLE_CHOICE: 'MCQ', CHOICE: 'MCQ', SELECT: 'MCQ',
+  TRANSLATION: 'TRANSLATION_RU_DE', TRANSLATE: 'TRANSLATION_RU_DE',
+  ARTICLE: 'ARTICLE_GENDER', GENDER: 'ARTICLE_GENDER', ARTIKEL: 'ARTICLE_GENDER',
+  PLURAL: 'PLURAL_FORM', CASE: 'CASE_DECLENSION', DECLENSION: 'CASE_DECLENSION', KASUS: 'CASE_DECLENSION',
+  CONJUGATE: 'CONJUGATION', PERFEKT: 'PERFEKT_FORM', PERFECT: 'PERFEKT_FORM',
+  SEPARABLE: 'SEPARABLE_VERB', ORDER: 'WORD_ORDER', WORDORDER: 'WORD_ORDER',
+  MATCH: 'MATCHING', PAIR: 'MATCHING', PAIRS: 'MATCHING',
+};
+function normExerciseType(v: unknown): string {
+  if (typeof v !== 'string') return 'CLOZE';
+  const up = v.trim().toUpperCase().replace(/[\s-]+/g, '_');
+  if (EXERCISE_TYPES.has(up)) return up;
+  return EXERCISE_TYPE_SYNONYMS[up] ?? 'CLOZE';
+}
+function normExerciseItem(it: unknown): unknown {
+  const r = rec(it);
+  if (!r) return it;
+  return {
+    type: normExerciseType(r.type),
+    prompt: firstString(r.prompt, r.question, r.text, r.sentence, r.task),
+    promptMeta: r.promptMeta ?? r.meta ?? null,
+    options: r.options ?? r.choices ?? null,
+    answer: firstString(r.answer, r.correctAnswer, r.correct, r.solution, r.expected),
+    acceptableAnswers: r.acceptableAnswers ?? r.acceptable ?? r.alternatives ?? null,
+    explanationRu: firstString(r.explanationRu, r.explanation, r.feedbackRu, r.reason) || null,
+  };
+}
+function normExerciseSet(v: unknown): unknown {
+  const o = rec(v);
+  if (!o) return v;
+  const raw = o.items ?? o.exercises ?? o.questions ?? o.tasks ?? o.exerciseItems;
+  const out = { ...o };
+  if (Array.isArray(raw)) out.items = raw.map(normExerciseItem);
+  delete out.exercises; delete out.questions; delete out.tasks; delete out.exerciseItems;
+  return out;
+}
+
+export const HomeworkCorrectionPayload = z.preprocess(
+  normHomeworkCorrection,
+  z.object({
+    homeworkId: z.string().nullish(),
+    structured: z.unknown().nullish(),
+    corrections: z.array(
+      z.object({
+        original: z.string(),
+        corrected: z.string(),
+        errorType: z.string(),
+        case: z.string().nullish(),
+        gender: z.string().nullish(),
+        explanationRu: z.string(),
+      }),
+    ),
+    errorSummary: z.record(z.number()).nullish(),
+  }),
+);
+
+export const ExerciseSetPayload = z.preprocess(
+  normExerciseSet,
+  z.object({
+    title: z.string(),
+    sourceType: z.string().nullish(),
+    cefrLevel: z.string().nullish(),
+    items: z.array(
+      z.object({
+        type: z.string(),
+        prompt: z.string(),
+        promptMeta: z.unknown().nullish(),
+        options: z.array(z.string()).nullish(),
+        answer: z.string(),
+        acceptableAnswers: z.array(z.string()).nullish(),
+        explanationRu: z.string().nullish(),
+      }),
+    ),
+  }),
+);
 
 export const ClassNotePayload = z.object({
   classNoteId: z.string().nullish(),

@@ -23,10 +23,35 @@
     "homework": "Homework",
     "exercises": "Exercises",
     "notes": "Notes",
+    "progress": "Progress",
     "admin": "Admin",
     "settings": "Settings",
     "assistant": "Assistant",
     "menu": "Menu"
+  },
+  "progress": {
+    "title": "Progress",
+    "subtitle": "All computed from your logs — these are trends, not a single day.",
+    "weeklyNote": "This week",
+    "retention": "True retention",
+    "retentionSample": "from {n} reviews",
+    "streak": "Streak",
+    "streakValue": "{days} d",
+    "matureYoung": "Mature / young",
+    "cards": "Cards",
+    "reviews30": "{n} in 30d",
+    "byCefr": "Words by CEFR",
+    "errors30": "Errors by type (30 days)",
+    "noData": "No data yet.",
+    "noErrors": "No errors — great!",
+    "journal": "Journal",
+    "journalEmpty": "Milestones will appear here: matured cards, corrected homework, level changes.",
+    "evCardMatured": "Word matured: {lemma}",
+    "evHomeworkCorrected": "Homework reviewed ({count} fixes)",
+    "evWeakCleared": "Weak area cleared: {topic}",
+    "evCefrChanged": "New level: {level}",
+    "evStreak": "{days}-day streak!",
+    "evUnitCompleted": "Unit completed: {title}"
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -51,8 +76,10 @@
     "greeting": "Hi, {name}!",
     "greetingNoName": "Hi!",
     "subtitle": "Level {level} · keep learning German",
+    "retentionInline": "retention {pct}%",
     "startReview": "Start review",
     "due": "Due for review",
+    "dueHint": "{vocab} words · {grammar} grammar",
     "words": "Words in deck",
     "grammarTopics": "Grammar topics",
     "homeworks": "Homework items",
@@ -72,6 +99,19 @@
   "review": {
     "progress": "{index} / {total}",
     "showAnswer": "Show answer",
+    "recallHint": "Type the translation from memory…",
+    "task_DE_TO_RU": "→ translation",
+    "task_RU_TO_DE": "→ German",
+    "task_PRODUCE_ARTICLE": "→ article",
+    "task_PRODUCE_PLURAL": "→ plural",
+    "hint_DE_TO_RU": "Type the translation from memory…",
+    "hint_RU_TO_DE": "Type the German word…",
+    "hint_PRODUCE_ARTICLE": "der / die / das?",
+    "hint_PRODUCE_PLURAL": "Plural form…",
+    "check": "Check",
+    "dontKnow": "Don't know",
+    "recallCorrect": "✓ Correct",
+    "recallWrong": "You wrote: {answer}",
     "again": "Again",
     "hard": "Hard",
     "good": "Good",
@@ -80,7 +120,12 @@
     "doneText": "Cards reviewed: {count}.",
     "doneEmpty": "No cards due.",
     "toVocab": "To vocabulary",
-    "toDashboard": "To dashboard"
+    "toDashboard": "To dashboard",
+    "grammarPrompt": "Recall the rule and build your own example",
+    "grammarHint": "Write an example from memory…",
+    "showRule": "Show the rule",
+    "pitfalls": "Pitfalls",
+    "toGrammar": "To grammar"
   },
   "homework": {
     "title": "Homework",
@@ -93,16 +138,20 @@
     "check": "Check",
     "suggested": "Suggested fixes",
     "corrections": "Corrections",
-    "allHomework": "All homework"
+    "allHomework": "All homework",
+    "fallbackTitle": "Homework",
+    "photoAlt": "homework"
   },
   "grammar": {
     "title": "Grammar",
+    "review": "Review",
     "subtitle": "{count} topics · ask the Assistant «explain Perfekt» — it explains and offers to save.",
     "mastery": "Mastered {pct}%",
     "examples": "Examples",
     "pitfalls": "Pitfalls",
     "empty": "No topics yet. Ask the Assistant «explain Akkusativ».",
-    "allTopics": "All topics"
+    "allTopics": "All topics",
+    "fallbackTitle": "Grammar topic"
   },
   "exercises": {
     "title": "Exercises",
@@ -113,7 +162,8 @@
     "empty": "No exercises yet.",
     "check": "Check",
     "tasks": "{count} tasks",
-    "allExercises": "All exercises"
+    "allExercises": "All exercises",
+    "answerPlaceholder": "answer"
   },
   "notes": {
     "title": "Class notes",
@@ -124,7 +174,9 @@
     "parse": "Parse with Assistant",
     "newWords": "New words",
     "grammar": "Grammar",
-    "allNotes": "All notes"
+    "allNotes": "All notes",
+    "fallbackTitle": "Note",
+    "parseHint": "Tap «Parse with Assistant» and ask it to «extract words and grammar» — it'll propose a structured breakdown."
   },
   "assistant": {
     "title": "Lingua",
@@ -148,6 +200,19 @@
     "languageEn": "English",
     "theme": "Theme",
     "account": "Account",
-    "themeHint": "Theme and sign-out are in the top-right corner."
+    "themeHint": "Theme and sign-out are in the top-right corner.",
+    "retentionTitle": "Target retention",
+    "retentionHint": "How aggressively FSRS schedules reviews. Higher = more reviews but stronger recall; lower = a lighter load. Default 90%.",
+    "retentionLoading": "Loading…",
+    "export": "Export data",
+    "exportHint": "Take everything out in open formats. The vocab imports into Anki; the review log is rare and valuable.",
+    "exportAll": "Download all (JSON)",
+    "exportVocab": "Vocabulary for Anki (CSV)",
+    "exportRevlog": "Review log (CSV)"
+  },
+  "offline": {
+    "offline": "Offline",
+    "pending": "{n} to sync",
+    "synced": "Synced"
   }
 }

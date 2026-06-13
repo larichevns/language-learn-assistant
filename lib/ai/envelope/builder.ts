@@ -3,10 +3,14 @@
  * The provider coalesces consecutive same-role turns into a valid wire format.
  *
  *   systemInstruction ← 01 persona/rules
- *   messages[0] user  ← 02 shared + 03 unit      (most-static cacheable prefix)
- *   messages[1] user  ← 04 scope + 05 summary    (more dynamic)
+ *   messages[0] user  ← 02 shared + 03 unit          (most-static cacheable prefix)
+ *   messages[1] user  ← 03.5 focus + 04 scope + 05 summary  (volatile — NOT cached)
  *   messages[..]      ← verbatim history (user/model)
  *   messages[last]    ← 06 new user message
+ *
+ * The focus-block (due/weak/recent-errors) is highly volatile, so it lives in
+ * the dynamic message[1] AFTER the cached prefix — never in message[0], which
+ * must stay byte-stable for the prefix cache. See phase-5-implementation-plan §4.3.
  */
 import type { Message } from '../types';
 
@@ -14,6 +18,7 @@ export interface EnvelopeData {
   system: string;
   shared?: string;
   unit?: string;
+  focus?: string;
   scope?: string;
   threadSummary?: string;
   history: Message[];
@@ -35,7 +40,7 @@ export function buildEnvelope(data: EnvelopeData): BuiltEnvelope {
   const block0 = present(data.shared, data.unit);
   if (block0) messages.push({ role: 'user', content: block0 });
 
-  const block1 = present(data.scope, data.threadSummary);
+  const block1 = present(data.focus, data.scope, data.threadSummary);
   if (block1) messages.push({ role: 'user', content: block1 });
 
   for (const m of data.history) {

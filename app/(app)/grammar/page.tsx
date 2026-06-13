@@ -4,8 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { apiGet } from '@/lib/api/client';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { cn } from '@/lib/utils';
 
 interface GrammarRow {
   id: string;
@@ -24,8 +26,15 @@ export default function GrammarPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-1 font-display text-2xl font-bold">{t('title')}</h1>
-      <p className="mb-5 text-sm text-muted-foreground">{t('subtitle', { count: data?.total ?? 0 })}</p>
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="mb-1 font-display text-2xl font-bold">{t('title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('subtitle', { count: data?.total ?? 0 })}</p>
+        </div>
+        <Link href="/grammar/review" className={cn(buttonVariants())}>
+          {t('review')}
+        </Link>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12">

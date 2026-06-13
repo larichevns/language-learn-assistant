@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         orderBy: { updatedAt: 'desc' },
         skip: p.skip,
         take: p.take,
-        include: { srsCard: { select: { state: true, dueAt: true } } },
+        include: { srsCards: { select: { state: true, dueAt: true, direction: true } } },
       }),
       prisma.vocabEntry.count({ where }),
     ]);

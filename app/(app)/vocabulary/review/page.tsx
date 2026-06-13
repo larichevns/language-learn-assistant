@@ -5,7 +5,8 @@ import { PartyPopper } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
-import { apiGet, apiPost } from '@/lib/api/client';
+import { apiGet } from '@/lib/api/client';
+import { postOrQueue } from '@/lib/offline/outbox';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge, Spinner } from '@/components/ui/feedback';
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils';
 
 interface ReviewCard {
   id: string;
+  direction: string;
   vocabEntry: {
     id: string;
     lemma: string;
@@ -33,6 +35,27 @@ const GRADES = [
   { grade: 5, key: 'easy', variant: 'success' as const },
 ] as const;
 
+const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.!?,;:]+$/g, '');
+const bareNoun = (lemma: string) => lemma.replace(/^(der|die|das)\s+/i, '');
+function withArticle(v: ReviewCard['vocabEntry']): string {
+  return v.gender ? `${v.gender.toLowerCase()} ${bareNoun(v.lemma)}` : v.lemma;
+}
+
+/** Per-direction prompt: what is shown, and what the learner must produce. */
+function dirView(card: ReviewCard): { front: string; frontDe: boolean; expected: string; answerDe: boolean } {
+  const v = card.vocabEntry;
+  switch (card.direction) {
+    case 'RU_TO_DE':
+      return { front: v.translationRu, frontDe: false, expected: bareNoun(v.lemma), answerDe: true };
+    case 'PRODUCE_ARTICLE':
+      return { front: bareNoun(v.lemma), frontDe: true, expected: (v.gender ?? '').toLowerCase(), answerDe: true };
+    case 'PRODUCE_PLURAL':
+      return { front: withArticle(v), frontDe: true, expected: v.pluralForm ?? '', answerDe: true };
+    default: // DE_TO_RU
+      return { front: withArticle(v), frontDe: true, expected: v.translationRu, answerDe: false };
+  }
+}
+
 export default function ReviewPage() {
   const t = useTranslations('review');
   const qc = useQueryClient();
@@ -43,17 +66,26 @@ export default function ReviewPage() {
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
 
   const items = data?.items ?? [];
   const current = items[index];
+  const view = current ? dirView(current) : null;
+  const recallMatch = revealed && typed.trim() !== '' && view ? norm(typed) === norm(view.expected) : false;
 
   async function grade(g: number) {
     if (!current || busy) return;
     setBusy(true);
     try {
-      await apiPost('/api/vocabulary/review', { vocabEntryId: current.vocabEntry.id, grade: g });
+      // postOrQueue advances even offline — the grade is queued and synced later.
+      await postOrQueue('/api/vocabulary/review', {
+        vocabEntryId: current.vocabEntry.id,
+        grade: g,
+        direction: current.direction,
+      });
       setRevealed(false);
+      setTyped('');
       setIndex((i) => i + 1);
     } finally {
       setBusy(false);
@@ -68,7 +100,7 @@ export default function ReviewPage() {
     );
   }
 
-  const done = !current;
+  const done = !current || !view;
 
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center p-6">
@@ -95,18 +127,25 @@ export default function ReviewPage() {
           <p className="mb-3 text-sm text-muted-foreground">{t('progress', { index: index + 1, total: items.length })}</p>
           <Card className="w-full">
             <CardContent className="flex min-h-[220px] flex-col items-center justify-center gap-4 p-8 text-center">
-              <Badge variant="muted">{current.vocabEntry.pos}</Badge>
               <div className="flex items-center gap-2">
-                <span className="de font-display text-3xl">
-                  {current.vocabEntry.gender
-                    ? `${current.vocabEntry.gender.toLowerCase()} ${current.vocabEntry.lemma.replace(/^(der|die|das)\s+/i, '')}`
-                    : current.vocabEntry.lemma}
-                </span>
-                <SpeakButton text={current.vocabEntry.lemma} className="h-6 w-6" />
+                <Badge variant="muted">{current.vocabEntry.pos}</Badge>
+                <Badge variant="default">{t(`task_${current.direction}`)}</Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn('font-display text-3xl', view.frontDe && 'de')}>{view.front}</span>
+                {view.frontDe && <SpeakButton text={current.vocabEntry.lemma} className="h-6 w-6" />}
               </div>
               {revealed && (
                 <div className="flex flex-col items-center gap-1 animate-fade-in">
-                  <span className="text-lg">{current.vocabEntry.translationRu}</span>
+                  <span className={cn('text-xl font-semibold', view.answerDe && 'de')}>{view.expected || '—'}</span>
+                  {typed.trim() !== '' && (
+                    <span className={cn('text-xs font-semibold', recallMatch ? 'text-success' : 'text-destructive')}>
+                      {recallMatch ? t('recallCorrect') : t('recallWrong', { answer: typed.trim() })}
+                    </span>
+                  )}
+                  <span className="mt-1 text-sm text-muted-foreground">
+                    {withArticle(current.vocabEntry)} — {current.vocabEntry.translationRu}
+                  </span>
                   <div className="flex gap-2">
                     {current.vocabEntry.pluralForm && <Badge variant="deutsch">pl. {current.vocabEntry.pluralForm}</Badge>}
                     {current.vocabEntry.partizipII && (
@@ -122,9 +161,26 @@ export default function ReviewPage() {
 
           <div className="mt-5 w-full">
             {!revealed ? (
-              <Button className="w-full" onClick={() => setRevealed(true)}>
-                {t('showAnswer')}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <input
+                  autoFocus
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') setRevealed(true);
+                  }}
+                  placeholder={t(`hint_${current.direction}`)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-center outline-none focus:border-primary"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={() => setRevealed(true)} disabled={!typed.trim()}>
+                    {t('check')}
+                  </Button>
+                  <Button variant="outline" onClick={() => setRevealed(true)}>
+                    {t('dontKnow')}
+                  </Button>
+                </div>
+              </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {GRADES.map((g) => (

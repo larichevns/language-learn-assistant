@@ -65,6 +65,19 @@ export const FEATURES: Record<string, FeatureSpec> = {
       'You compress a German-tutoring dialogue into a short Russian summary. Keep: decisions made, which German words were hard, open questions, exercise progress. Output ≤ 250 words, in Russian.',
     userPromptTemplate: 'Сожми этот диалог:\n\n{{dialogue}}',
   },
+  // Nightly rollup's optional weekly note. Background → never bills, skips limits.
+  // Uses the chat model (not lite) for tighter format adherence — `cleanNote`
+  // still strips any stray markdown as a safety net. Language is NOT hardcoded:
+  // the prompt replies in the learner's native language from the data payload.
+  progress_summary: {
+    slug: 'progress_summary',
+    model: CHAT_MODEL,
+    reasoningEffort: 'minimal',
+    proposeTargets: [],
+    isBackground: true,
+    systemPrompt:
+      'You write a short, warm weekly progress note for a language learner. Reply ONLY in the learner\'s native language (given in the data). Ground every statement strictly in the numbers provided — never invent progress. 2–4 sentences ending with one concrete thing to focus on next. PLAIN TEXT ONLY: no markdown, no asterisks, no headings, no bullet lists. Do NOT greet ("Привет"/"Hi") and do NOT sign off — start directly with the substance.',
+  },
 };
 
 export function getFeature(slug: string): FeatureSpec {

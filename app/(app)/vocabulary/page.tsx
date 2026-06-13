@@ -21,7 +21,7 @@ interface VocabRow {
   gender?: string | null;
   pluralForm?: string | null;
   cefrLevel?: string | null;
-  srsCard?: { state: string; dueAt: string } | null;
+  srsCards?: Array<{ state: string; dueAt: string; direction?: string }>;
 }
 interface ListResp {
   items: VocabRow[];
@@ -98,7 +98,7 @@ export default function VocabularyPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data?.items.map((v) => {
-            const dueNow = v.srsCard ? new Date(v.srsCard.dueAt) <= new Date() : false;
+            const dueNow = (v.srsCards ?? []).some((c) => new Date(c.dueAt) <= new Date());
             return (
               <Card key={v.id}>
                 <CardContent className="flex flex-col gap-1 p-4">

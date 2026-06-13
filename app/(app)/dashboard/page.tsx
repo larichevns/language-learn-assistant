@@ -12,19 +12,35 @@ export default async function DashboardPage() {
   const userId = session!.user.id;
   const t = await getTranslations('dashboard');
 
-  const [due, vocab, grammar, homework, profile] = await Promise.all([
-    prisma.srsCard.count({ where: { userId, dueAt: { lte: new Date() }, state: { not: 'SUSPENDED' } } }),
+  const now = new Date();
+  const [vocabDue, grammarDue, vocab, grammar, homework, profile, retPass, retTotal] = await Promise.all([
+    prisma.srsCard.count({ where: { userId, dueAt: { lte: now }, state: { not: 'SUSPENDED' } } }),
+    prisma.grammarCard.count({ where: { userId, dueAt: { lte: now }, state: { not: 'SUSPENDED' } } }),
     prisma.vocabEntry.count({ where: { userId } }),
     prisma.grammarTopic.count({ where: { userId } }),
     prisma.homework.count({ where: { userId } }),
     prisma.learnerProfile.findUnique({ where: { userId }, select: { cefrLevel: true } }),
+    prisma.review.count({ where: { srsCard: { userId }, prevInterval: { gte: 1 }, grade: { gte: 3 } } }),
+    prisma.review.count({ where: { srsCard: { userId }, prevInterval: { gte: 1 } } }),
   ]);
+  const retention = retTotal ? Math.round((retPass / retTotal) * 100) : null;
+  // One "to review" number across vocab + grammar; send the click wherever work waits.
+  const due = vocabDue + grammarDue;
+  const dueHref = vocabDue > 0 ? '/vocabulary/review' : grammarDue > 0 ? '/grammar/review' : '/vocabulary/review';
 
-  const stats = [
-    { label: t('due'), value: due, icon: Brain, href: '/vocabulary/review', tone: 'violet' as const },
-    { label: t('words'), value: vocab, icon: BookOpen, href: '/vocabulary', tone: 'coral' as const },
-    { label: t('grammarTopics'), value: grammar, icon: SpellCheck2, href: '/grammar', tone: 'green' as const },
-    { label: t('homeworks'), value: homework, icon: NotebookPen, href: '/homework', tone: 'amber' as const },
+  type Tone = 'violet' | 'coral' | 'green' | 'amber';
+  const stats: Array<{ label: string; value: number; icon: typeof Brain; href: string; tone: Tone; hint?: string }> = [
+    {
+      label: t('due'),
+      value: due,
+      icon: Brain,
+      href: dueHref,
+      tone: 'violet',
+      hint: grammarDue > 0 ? t('dueHint', { vocab: vocabDue, grammar: grammarDue }) : undefined,
+    },
+    { label: t('words'), value: vocab, icon: BookOpen, href: '/vocabulary', tone: 'coral' },
+    { label: t('grammarTopics'), value: grammar, icon: SpellCheck2, href: '/grammar', tone: 'green' },
+    { label: t('homeworks'), value: homework, icon: NotebookPen, href: '/homework', tone: 'amber' },
   ];
   const TONE = {
     violet: { card: 'bg-primary text-primary-foreground', chip: 'bg-white/20 text-white', lab: 'text-white/80' },
@@ -40,7 +56,17 @@ export default async function DashboardPage() {
           <h1 className="font-display text-2xl font-bold">
             {session?.user.name ? t('greeting', { name: session.user.name }) : t('greetingNoName')}
           </h1>
-          <p className="text-sm text-muted-foreground">{t('subtitle', { level: profile?.cefrLevel ?? 'A1' })}</p>
+          <p className="text-sm text-muted-foreground">
+            {t('subtitle', { level: profile?.cefrLevel ?? 'A1' })}
+            {retention != null ? (
+              <>
+                {' · '}
+                <Link href="/progress" className="font-semibold text-primary hover:underline">
+                  {t('retentionInline', { pct: retention })}
+                </Link>
+              </>
+            ) : null}
+          </p>
         </div>
         <Link href="/vocabulary/review" className={buttonVariants()}>
           {t('startReview')}
@@ -59,6 +85,7 @@ export default async function DashboardPage() {
                   </span>
                   <span className="font-display text-3xl font-extrabold tabular-nums">{s.value}</span>
                   <span className={cn('text-sm font-semibold', tn.lab)}>{s.label}</span>
+                  {s.hint ? <span className={cn('text-xs', tn.lab)}>{s.hint}</span> : null}
                 </CardContent>
               </Card>
             </Link>

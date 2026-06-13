@@ -23,10 +23,35 @@
     "homework": "Домашки",
     "exercises": "Упражнения",
     "notes": "Заметки",
+    "progress": "Прогресс",
     "admin": "Админка",
     "settings": "Настройки",
     "assistant": "Ассистент",
     "menu": "Меню"
+  },
+  "progress": {
+    "title": "Прогресс",
+    "subtitle": "Всё посчитано из твоих логов — это тренды, а не один день.",
+    "weeklyNote": "На этой неделе",
+    "retention": "True retention",
+    "retentionSample": "по {n} повт.",
+    "streak": "Серия",
+    "streakValue": "{days} дн.",
+    "matureYoung": "Зрелые / новые",
+    "cards": "Карточек",
+    "reviews30": "{n} за 30 дн.",
+    "byCefr": "Слова по уровням CEFR",
+    "errors30": "Ошибки по типам (30 дней)",
+    "noData": "Пока нет данных.",
+    "noErrors": "Ошибок нет — отлично!",
+    "journal": "Журнал",
+    "journalEmpty": "Здесь появятся вехи: дозревшие карточки, разобранные домашки, смены уровня.",
+    "evCardMatured": "Слово закрепилось: {lemma}",
+    "evHomeworkCorrected": "Домашка разобрана ({count} испр.)",
+    "evWeakCleared": "Закрыта слабая тема: {topic}",
+    "evCefrChanged": "Новый уровень: {level}",
+    "evStreak": "Серия {days} дней!",
+    "evUnitCompleted": "Юнит пройден: {title}"
   },
   "auth": {
     "signInTitle": "Вход",
@@ -51,8 +76,10 @@
     "greeting": "Привет, {name}!",
     "greetingNoName": "Привет!",
     "subtitle": "Уровень {level} · продолжаем учить немецкий",
+    "retentionInline": "удержание {pct}%",
     "startReview": "Начать повторение",
     "due": "К повторению",
+    "dueHint": "{vocab} слов · {grammar} грамм.",
     "words": "Слов в словаре",
     "grammarTopics": "Тем грамматики",
     "homeworks": "Домашних работ",
@@ -72,6 +99,19 @@
   "review": {
     "progress": "{index} / {total}",
     "showAnswer": "Показать ответ",
+    "recallHint": "Впиши перевод по памяти…",
+    "task_DE_TO_RU": "→ перевод",
+    "task_RU_TO_DE": "→ по-немецки",
+    "task_PRODUCE_ARTICLE": "→ артикль",
+    "task_PRODUCE_PLURAL": "→ мн. число",
+    "hint_DE_TO_RU": "Впиши перевод по памяти…",
+    "hint_RU_TO_DE": "Впиши слово по-немецки…",
+    "hint_PRODUCE_ARTICLE": "der / die / das?",
+    "hint_PRODUCE_PLURAL": "Множественное число…",
+    "check": "Проверить",
+    "dontKnow": "Не помню",
+    "recallCorrect": "✓ Верно",
+    "recallWrong": "Ты написал: {answer}",
     "again": "Снова",
     "hard": "Трудно",
     "good": "Хорошо",
@@ -80,7 +120,12 @@
     "doneText": "Повторено карточек: {count}.",
     "doneEmpty": "Нет карточек к повторению.",
     "toVocab": "К словарю",
-    "toDashboard": "На дашборд"
+    "toDashboard": "На дашборд",
+    "grammarPrompt": "Вспомни правило и построй свой пример",
+    "grammarHint": "Напиши пример по памяти…",
+    "showRule": "Показать правило",
+    "pitfalls": "Подводные камни",
+    "toGrammar": "К грамматике"
   },
   "homework": {
     "title": "Домашки",
@@ -93,16 +138,20 @@
     "check": "Проверить",
     "suggested": "Предложенные исправления",
     "corrections": "Исправления",
-    "allHomework": "Все домашки"
+    "allHomework": "Все домашки",
+    "fallbackTitle": "Домашка",
+    "photoAlt": "домашка"
   },
   "grammar": {
     "title": "Грамматика",
+    "review": "Повторять",
     "subtitle": "{count} тем · спроси Ассистента «объясни Perfekt» — он объяснит и предложит сохранить.",
     "mastery": "Усвоено {pct}%",
     "examples": "Примеры",
     "pitfalls": "Подводные камни",
     "empty": "Пока нет тем. Спроси Ассистента «объясни Akkusativ».",
-    "allTopics": "Все темы"
+    "allTopics": "Все темы",
+    "fallbackTitle": "Грамматика"
   },
   "exercises": {
     "title": "Упражнения",
@@ -113,7 +162,8 @@
     "empty": "Пока нет упражнений.",
     "check": "Проверить",
     "tasks": "{count} заданий",
-    "allExercises": "Все упражнения"
+    "allExercises": "Все упражнения",
+    "answerPlaceholder": "ответ"
   },
   "notes": {
     "title": "Заметки с уроков",
@@ -124,7 +174,9 @@
     "parse": "Разобрать с Ассистентом",
     "newWords": "Новые слова",
     "grammar": "Грамматика",
-    "allNotes": "Все заметки"
+    "allNotes": "Все заметки",
+    "fallbackTitle": "Заметка",
+    "parseHint": "Нажми «Разобрать с Ассистентом» и попроси «вытащи слова и грамматику» — он предложит structured-разбор."
   },
   "assistant": {
     "title": "Lingua",
@@ -148,6 +200,19 @@
     "languageEn": "English",
     "theme": "Тема",
     "account": "Аккаунт",
-    "themeHint": "Тему и выход можно менять в правом верхнем углу."
+    "themeHint": "Тему и выход можно менять в правом верхнем углу.",
+    "retentionTitle": "Целевое запоминание",
+    "retentionHint": "Насколько часто FSRS показывает карточки. Выше — больше повторений, но крепче память; ниже — меньше нагрузка. По умолчанию 90%.",
+    "retentionLoading": "Загрузка…",
+    "export": "Экспорт данных",
+    "exportHint": "Вывези всё в открытых форматах. Словарь импортируется в Anki, журнал повторений — редкий и ценный.",
+    "exportAll": "Скачать всё (JSON)",
+    "exportVocab": "Словарь для Anki (CSV)",
+    "exportRevlog": "Журнал повторений (CSV)"
+  },
+  "offline": {
+    "offline": "Офлайн",
+    "pending": "{n} к синхронизации",
+    "synced": "Синхронизировано"
   }
 }

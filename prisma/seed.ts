@@ -61,6 +61,7 @@ async function main() {
     { slug: 'vocab_extract', name: 'Vocabulary extraction', modelId: flash.id },
     { slug: 'grammar_explain', name: 'Grammar explanation', modelId: flash.id },
     { slug: 'thread_summarize', name: 'Thread summarizer', modelId: lite.id },
+    { slug: 'progress_summary', name: 'Progress summary (nightly)', modelId: flash.id },
   ];
   for (const f of features) {
     const ff = await prisma.featureFlag.upsert({

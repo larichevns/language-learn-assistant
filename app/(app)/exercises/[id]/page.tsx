@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Check, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -32,6 +33,7 @@ interface ExSet {
 
 export default function ExerciseDetailPage() {
   const id = String(useParams().id);
+  const t = useTranslations('exercises');
   const { data, isLoading, refetch } = useQuery({ queryKey: ['exercise', id], queryFn: () => apiGet<ExSet>(`/api/exercises/${id}`) });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [graded, setGraded] = useState(false);
@@ -60,7 +62,7 @@ export default function ExerciseDetailPage() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <Link href="/exercises" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Все упражнения
+        <ArrowLeft className="h-4 w-4" /> {t('allExercises')}
       </Link>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-bold">{data.title}</h1>
@@ -99,7 +101,7 @@ export default function ExerciseDetailPage() {
                 ) : (
                   <Input
                     disabled={isGraded}
-                    placeholder="ответ"
+                    placeholder={t('answerPlaceholder')}
                     value={isGraded ? (item.userAnswer ?? '') : (answers[item.id] ?? '')}
                     onChange={(e) => setAnswers((a) => ({ ...a, [item.id]: e.target.value }))}
                   />
@@ -122,7 +124,7 @@ export default function ExerciseDetailPage() {
 
       {!isGraded && (
         <Button className="mt-4 w-full" disabled={submit.isPending} onClick={() => submit.mutate()}>
-          {submit.isPending ? <Spinner /> : 'Проверить'}
+          {submit.isPending ? <Spinner /> : t('check')}
         </Button>
       )}
     </div>

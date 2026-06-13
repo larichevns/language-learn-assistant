@@ -8,6 +8,7 @@ export const CAPS = {
   THREAD_SUMMARY: 4000,
   TURN: 2000,
   SHARED: 3000,
+  FOCUS: 2000,
 } as const;
 
 /** Last N verbatim turns kept in the envelope. */

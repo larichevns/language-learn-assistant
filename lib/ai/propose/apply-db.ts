@@ -15,6 +15,7 @@ import {
   type PartOfSpeech,
   Prisma,
   type Proposal,
+  type ReviewDirection,
   type SourceObjectType,
   type SrsState,
 } from '@prisma/client';
@@ -32,6 +33,9 @@ import {
   UnitPayload,
   VocabEntryPayload,
 } from './tool';
+import { recordAttempt } from '../../learning/record-attempt';
+import { errorTypeToCategory, normalizeErrorType } from '../../learning/error-map';
+import { emitTimelineEvent } from '../../learning/timeline';
 
 type Tx = Prisma.TransactionClient;
 
@@ -72,12 +76,18 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
         create: { userId, lemma: v.lemma, pos: v.pos as PartOfSpeech, ...data },
         update: data,
       });
-      // Auto-enroll for spaced repetition (the learner shouldn't have to ask).
-      await tx.srsCard.upsert({
-        where: { vocabEntryId: row.id },
-        create: { userId, vocabEntryId: row.id },
-        update: {},
-      });
+      // Auto-enroll separate memories (minimum-information principle):
+      // DE→RU recognition + RU→DE production for every word; nouns also get a
+      // "produce the article" card.
+      const enrollDirections: ReviewDirection[] = ['DE_TO_RU', 'RU_TO_DE'];
+      if ((v.pos as PartOfSpeech) === 'NOUN' && v.gender) enrollDirections.push('PRODUCE_ARTICLE');
+      for (const direction of enrollDirections) {
+        await tx.srsCard.upsert({
+          where: { vocabEntryId_direction: { vocabEntryId: row.id, direction } },
+          create: { userId, vocabEntryId: row.id, direction },
+          update: {},
+        });
+      }
       return row.id;
     }
     case 'GRAMMAR_TOPIC': {
@@ -94,37 +104,104 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
       if (p.op === 'UPDATE' && p.targetId) {
         const res = await tx.grammarTopic.updateMany({ where: { id: p.targetId, userId }, data });
         if (!res.count) throw new ApiError('not_found', 'Grammar topic not found', 404);
+        await tx.grammarCard.upsert({ where: { grammarTopicId: p.targetId }, create: { userId, grammarTopicId: p.targetId }, update: {} });
         return p.targetId;
       }
       const unitId = await currentUnitId(tx, userId);
       const row = await tx.grammarTopic.create({ data: { userId, unitId, masteryScore: 0.1, ...data } });
+      // Auto-enroll the topic for spaced production review (same FSRS engine as vocab).
+      await tx.grammarCard.upsert({ where: { grammarTopicId: row.id }, create: { userId, grammarTopicId: row.id }, update: {} });
       return row.id;
     }
     case 'HOMEWORK_CORRECTION': {
       const h = HomeworkCorrectionPayload.parse(payload);
-      const hwId = p.targetId ?? h.homeworkId;
+      // The model corrects one mistake per proposal and does not echo an id;
+      // bind the homework server-side from the proposal's thread scope.
+      let hwId = p.targetId ?? h.homeworkId ?? null;
+      if (!hwId && p.threadId) {
+        const thread = await tx.chatThread.findUnique({
+          where: { id: p.threadId },
+          select: { scopeType: true, scopeId: true },
+        });
+        if (thread?.scopeType === 'HOMEWORK') hwId = thread.scopeId;
+      }
       if (!hwId) throw new ApiError('invalid_input', 'homeworkId required', 400);
-      const res = await tx.homework.updateMany({
-        where: { id: hwId, userId },
+      // One proposal = one mistake; accumulate into the homework's corrections
+      // (dedupe by original|corrected) instead of overwriting on each Apply.
+      const hw = await tx.homework.findFirst({ where: { id: hwId, userId }, select: { correctionsJson: true } });
+      if (!hw) throw new ApiError('not_found', 'Homework not found', 404);
+      const prev = Array.isArray(hw.correctionsJson) ? (hw.correctionsJson as Array<Record<string, unknown>>) : [];
+      const seen = new Set(prev.map((c) => `${c.original}|${c.corrected}`));
+      const added = h.corrections.filter((c) => !seen.has(`${c.original}|${c.corrected}`));
+      await tx.homework.update({
+        where: { id: hwId },
         data: {
-          correctionsJson: json(h.corrections),
+          correctionsJson: [...prev, ...added] as Prisma.InputJsonValue,
           errorSummaryJson: json(h.errorSummary),
           structuredJson: json(h.structured),
           status: 'CORRECTED',
         },
       });
-      if (!res.count) throw new ApiError('not_found', 'Homework not found', 404);
+      // Phase 5 — close the loop: durable per-mistake rows + an Attempt that
+      // drops BKT mastery on a matching grammar topic (if the learner has one).
+      for (const c of added) {
+        const errorType = normalizeErrorType(c.errorType);
+        const category = errorTypeToCategory(errorType);
+        const topic = await tx.grammarTopic.findFirst({ where: { userId, category }, select: { id: true } });
+        await tx.homeworkError.create({
+          data: {
+            userId,
+            homeworkId: hwId,
+            errorType,
+            original: c.original,
+            corrected: c.corrected,
+            explanationRu: c.explanationRu,
+            grammarTopicId: topic?.id ?? null,
+          },
+        });
+        await recordAttempt(tx, {
+          userId,
+          source: 'HOMEWORK',
+          targetId: hwId,
+          grammarTopicId: topic?.id ?? null,
+          category,
+          isCorrect: false,
+          errorTypeJson: { errorType, original: c.original },
+        });
+      }
+      if (added.length > 0) {
+        await emitTimelineEvent(tx, {
+          userId,
+          type: 'HOMEWORK_CORRECTED',
+          refType: 'HOMEWORK',
+          refId: hwId,
+          payload: { corrections: added.length },
+        });
+      }
       return hwId;
     }
     case 'EXERCISE_SET': {
       const e = ExerciseSetPayload.parse(payload);
-      const unitId = await currentUnitId(tx, userId);
+      // Bind the set to its target from the proposal's thread scope (the model
+      // doesn't echo ids) so graded attempts can move that topic's BKT mastery.
+      let grammarTopicId: string | null = null;
+      let scopedUnitId: string | null = null;
+      if (p.threadId) {
+        const thread = await tx.chatThread.findUnique({
+          where: { id: p.threadId },
+          select: { scopeType: true, scopeId: true },
+        });
+        if (thread?.scopeType === 'GRAMMAR_TOPIC') grammarTopicId = thread.scopeId;
+        else if (thread?.scopeType === 'UNIT') scopedUnitId = thread.scopeId;
+      }
+      const unitId = scopedUnitId ?? (await currentUnitId(tx, userId));
       const row = await tx.exerciseSet.create({
         data: {
           userId,
           unitId,
+          grammarTopicId,
           title: e.title,
-          sourceType: (e.sourceType ?? 'MANUAL') as SourceObjectType,
+          sourceType: (e.sourceType ?? (grammarTopicId ? 'GRAMMAR_TOPIC' : scopedUnitId ? 'UNIT' : 'MANUAL')) as SourceObjectType,
           cefrLevel: (e.cefrLevel ?? null) as CefrLevel | null,
           status: 'GENERATED',
           items: {
@@ -218,12 +295,17 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
       const s = SrsCardPayload.parse(payload);
       const vocab = await tx.vocabEntry.findFirst({ where: { id: s.vocabEntryId, userId }, select: { id: true } });
       if (!vocab) throw new ApiError('not_found', 'Vocab entry not found', 404);
-      const row = await tx.srsCard.upsert({
-        where: { vocabEntryId: s.vocabEntryId },
-        create: { userId, vocabEntryId: s.vocabEntryId, state: (s.initialState ?? 'NEW') as SrsState },
-        update: {},
-      });
-      return row.id;
+      const dirs = (s.directions?.length ? s.directions : ['DE_TO_RU']) as ReviewDirection[];
+      let firstId = '';
+      for (const direction of dirs) {
+        const c = await tx.srsCard.upsert({
+          where: { vocabEntryId_direction: { vocabEntryId: s.vocabEntryId, direction } },
+          create: { userId, vocabEntryId: s.vocabEntryId, direction, state: (s.initialState ?? 'NEW') as SrsState },
+          update: {},
+        });
+        if (!firstId) firstId = c.id;
+      }
+      return firstId;
     }
     default:
       throw new ApiError('invalid_input', `Unsupported target_type: ${p.targetType}`, 400);

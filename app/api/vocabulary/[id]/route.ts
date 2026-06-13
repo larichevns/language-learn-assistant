@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const row = await prisma.vocabEntry.findFirst({
       where: { id, userId: user.userId },
-      include: { srsCard: true },
+      include: { srsCards: true },
     });
     if (!row) throw new ApiError('not_found', 'Vocab entry not found', 404);
     return successResponse(row);

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -26,8 +27,9 @@ interface GrammarTopic {
 
 export default function GrammarDetailPage() {
   const id = String(useParams().id);
+  const t = useTranslations('grammar');
   const { data, isLoading } = useQuery({ queryKey: ['grammar', id], queryFn: () => apiGet<GrammarTopic>(`/api/grammar/${id}`) });
-  useScope({ type: 'GRAMMAR_TOPIC', id, label: data?.title ?? 'Грамматика' });
+  useScope({ type: 'GRAMMAR_TOPIC', id, label: data?.title ?? t('fallbackTitle') });
 
   if (isLoading || !data) {
     return (
@@ -40,7 +42,7 @@ export default function GrammarDetailPage() {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <Link href="/grammar" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Все темы
+        <ArrowLeft className="h-4 w-4" /> {t('allTopics')}
       </Link>
       <div className="mb-4 flex items-center gap-2">
         <h1 className="font-display text-2xl font-bold">{data.title}</h1>
@@ -58,7 +60,7 @@ export default function GrammarDetailPage() {
       {data.examplesJson && data.examplesJson.length > 0 && (
         <Card className="mb-4">
           <CardContent className="flex flex-col gap-2 p-5">
-            <h2 className="text-sm font-semibold">Примеры</h2>
+            <h2 className="text-sm font-semibold">{t('examples')}</h2>
             {data.examplesJson.map((ex, i) => (
               <div key={i} className="flex items-center gap-1.5 text-sm">
                 <SpeakButton text={ex.de} />
@@ -72,7 +74,7 @@ export default function GrammarDetailPage() {
       {data.pitfallsJson && data.pitfallsJson.length > 0 && (
         <Card>
           <CardContent className="flex flex-col gap-1 p-5">
-            <h2 className="text-sm font-semibold">Подводные камни</h2>
+            <h2 className="text-sm font-semibold">{t('pitfalls')}</h2>
             <ul className="list-disc pl-5 text-sm text-muted-foreground">
               {data.pitfallsJson.map((p, i) => (
                 <li key={i}>{p}</li>

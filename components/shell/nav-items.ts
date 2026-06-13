@@ -2,6 +2,7 @@ import {
   BookOpen,
   GraduationCap,
   LayoutDashboard,
+  LineChart,
   ListChecks,
   type LucideIcon,
   NotebookPen,
@@ -22,4 +23,5 @@ export const NAV: NavItem[] = [
   { href: '/homework', key: 'homework', icon: NotebookPen },
   { href: '/exercises', key: 'exercises', icon: ListChecks },
   { href: '/notes', key: 'notes', icon: GraduationCap },
+  { href: '/progress', key: 'progress', icon: LineChart },
 ];

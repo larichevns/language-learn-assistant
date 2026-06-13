@@ -55,3 +55,68 @@ describe('propose parse + validate + apply', () => {
     expect(() => parseProposeCall(call({ target_type: 'NOPE', summary: 'x', payload: '{}' }))).toThrow();
   });
 });
+
+// Regression: the model emits non-canonical shapes for the nested payloads
+// (flat single correction; `exercises`/`question`/`correctAnswer`; type
+// `FILL_IN_THE_BLANK`). These used to pass persist but 500 at Apply.
+// See debugging/propose-Apply-500-на-вложенных-payload-из-за-формы-модели.
+describe('propose payload coercion (model-shape tolerance)', () => {
+  it('wraps a FLAT homework correction (no corrections[] array) and maps explanation→explanationRu', () => {
+    const parsed = parseProposeCall(
+      call({
+        target_type: 'HOMEWORK_CORRECTION',
+        summary: 'Исправление: Kasus',
+        payload: JSON.stringify({
+          original: 'Ich sehe der Chef.',
+          corrected: 'Ich sehe den Chef.',
+          errorType: 'Kasus',
+          explanation: 'sehen + Akkusativ → den Chef.',
+        }),
+      }),
+    );
+    const { row } = applyProposal(parsed);
+    const corrections = row.corrections as Array<Record<string, string>>;
+    expect(Array.isArray(corrections)).toBe(true);
+    expect(corrections).toHaveLength(1);
+    expect(corrections[0]!.original).toBe('Ich sehe der Chef.');
+    expect(corrections[0]!.errorType).toBe('Kasus');
+    expect(corrections[0]!.explanationRu).toBe('sehen + Akkusativ → den Chef.');
+  });
+
+  it('maps exercise set `exercises`→`items`, question→prompt, correctAnswer→answer, FILL_IN_THE_BLANK→CLOZE', () => {
+    const parsed = parseProposeCall(
+      call({
+        target_type: 'EXERCISE_SET',
+        summary: 'Упражнения',
+        payload: JSON.stringify({
+          title: 'Артикли',
+          cefrLevel: 'A2',
+          exercises: [
+            { type: 'FILL_IN_THE_BLANK', question: 'Ich sehe ___ Katze.', correctAnswer: 'die', explanationRu: 'ж. род' },
+          ],
+        }),
+      }),
+    );
+    const { row } = applyProposal(parsed);
+    const items = row.items as Array<Record<string, string>>;
+    expect(items).toHaveLength(1);
+    expect(items[0]!.type).toBe('CLOZE');
+    expect(items[0]!.prompt).toBe('Ich sehe ___ Katze.');
+    expect(items[0]!.answer).toBe('die');
+    expect(items[0]!.explanationRu).toBe('ж. род');
+  });
+
+  it('keeps a correctly-shaped corrections[] array unchanged', () => {
+    const parsed = parseProposeCall(
+      call({
+        target_type: 'HOMEWORK_CORRECTION',
+        summary: 'ok',
+        payload: JSON.stringify({
+          corrections: [{ original: 'a', corrected: 'b', errorType: 'Artikel', explanationRu: 'x' }],
+        }),
+      }),
+    );
+    const { row } = applyProposal(parsed);
+    expect((row.corrections as unknown[]).length).toBe(1);
+  });
+});
