@@ -1,7 +1,7 @@
 ---
 tags: [spec, phase-7, design, implementation, ui]
 date: 2026-06-13
-status: approved-direction
+status: implemented
 decision: Direction B (Friendly) — GENTLY muted; centered Google-style assistant (ToonyGamy pattern); verified by ui-tester
 prototype: design/wireframes/b-friendly-final.html
 ---
@@ -133,7 +133,9 @@ Dark-режим: тёмно-фиолетово-нейтральный фон (`#
 - Мобильный drawer поднят над композером (`z-[60]`) + затемнение/blur.
 - Удалён тестовый артефакт словаря (`Prüfling…` из e2e).
 
-**Осталось (P1/P2 → backlog):** мобильный drawer — слайд-анимация (shadcn Sheet); ручная форма добавления слова не обогащает (артикль/уровень/мн.ч.) — пропускать через propose/Apply-пайплайн как ассистент; контраст текста сайдбара в dark — поднять до `text-foreground/80`; опц. вертикально-центрированный режим окна (сейчас растёт вверх от строки — по эталону ToonyGamy). Внесено в [[post-mvp-backlog]].
+**Добито потом (вся спека закрыта):** полная **машина состояний** `collapsed (пилюля по центру с ⌘K) → hover → bar → window` (hover-intent 150/220ms); **Motion** (`motion@11`) — spring-анимации окна/scrim/пилюли; **⌘K-хинт** на пилюле; **цвета манифеста+иконки** под новую палитру (`#6C5FC9`/коралл); **Badge** — вес под Nunito; **мобильный bottom-sheet** ассистента (адаптив: full-width снизу, `rounded-t-3xl`); **перепрогон Playwright E2E — 5/5 зелёные**. `tsc` чисто, `next build` зелёный (43 страницы). Проверено в браузере: пилюля → клик → окно с motion-переходом, история подгружается.
+
+**Осталось только опц. полировка (→ [[post-mvp-backlog]]):** слайд-анимация мобильного NAV-drawer (shadcn Sheet); обогащение ручной формы добавления слова через propose/Apply; чуть поднять контраст текста сайдбара в dark; PNG/maskable PWA-иконки. Вертикально-центрированный режим окна сознательно НЕ делаем — окно растёт вверх от центр-строки по эталону ToonyGamy.
 
 ## Related
 - [[phase-6-design-directions]] · прототип `design/wireframes/b-friendly-final.html`

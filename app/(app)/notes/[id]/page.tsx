@@ -25,7 +25,7 @@ interface Note {
 
 export default function NoteDetailPage() {
   const id = String(useParams().id);
-  const openDock = useDock((s) => s.openDock);
+  const openDock = useDock((s) => s.openWindow);
   const { data, isLoading } = useQuery({ queryKey: ['notes', id], queryFn: () => apiGet<Note>(`/api/notes/${id}`) });
   useScope({ type: 'CLASS_NOTE', id, label: data?.title ?? 'Заметка' });
 

@@ -8,20 +8,27 @@ export interface DockScope {
   label?: string;
 }
 
+/** collapsed (pill) → hover → bar → click/type → window (ToonyGamy pattern). */
+export type DockState = 'collapsed' | 'bar' | 'window';
+
 interface DockStore {
-  open: boolean;
+  state: DockState;
   scope: DockScope;
-  openDock: () => void;
-  closeDock: () => void;
+  setState: (s: DockState) => void;
+  openWindow: () => void;
+  expandBar: () => void;
+  collapse: () => void;
   toggle: () => void;
   setScope: (scope: DockScope) => void;
 }
 
 export const useDock = create<DockStore>((set) => ({
-  open: false,
+  state: 'collapsed',
   scope: { type: 'GLOBAL', label: 'Весь курс' },
-  openDock: () => set({ open: true }),
-  closeDock: () => set({ open: false }),
-  toggle: () => set((s) => ({ open: !s.open })),
+  setState: (s) => set({ state: s }),
+  openWindow: () => set({ state: 'window' }),
+  expandBar: () => set((st) => (st.state === 'window' ? st : { state: 'bar' })),
+  collapse: () => set({ state: 'collapsed' }),
+  toggle: () => set((st) => ({ state: st.state === 'window' ? 'collapsed' : 'window' })),
   setScope: (scope) => set({ scope }),
 }));

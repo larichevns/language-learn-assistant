@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'ИИ-ассистент для изучения немецкого языка',
     start_url: '/dashboard',
     display: 'standalone',
-    background_color: '#0f1117',
-    theme_color: '#4f46e5',
+    background_color: '#18171F',
+    theme_color: '#6C5FC9',
     lang: 'ru',
     categories: ['education'],
     icons: [
