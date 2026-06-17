@@ -1,7 +1,8 @@
 ---
-tags: [debugging, propose-apply, ai, zod, homework, exercises]
+tags: [debugging, propose-apply, ai, zod, homework, exercises, grammar]
 date: 2026-06-13
 ---
+<!-- Updated: 2026-06-17 | same class extended to GRAMMAR_TOPIC (tolerant z.preprocess) + the rule→"[object Object]" fix; found by the collection-grouping live UI test. -->
 
 # propose→Apply 500 на вложенных payload из-за формы, которую эмитит модель
 
@@ -25,6 +26,23 @@ date: 2026-06-13
 ## Верификация
 - `tsc` чисто; `vitest` 21→24 (3 регресс-теста на точные формы модели, `propose.test.ts`).
 - Браузер: оба ранее упавших предложения по их **тем же** id → `fetch(... /apply)` = **200**. Полный UI: сгенерировать упражнения → Apply → пройти → авто-оценка с ✓ и пояснениями; ДЗ → Apply → исправление отображается (зачёркнуто→исправлено + тип + объяснение).
+
+## Update 2026-06-17 — тот же класс на `GRAMMAR_TOPIC` (+ rule-форма → `[object Object]`)
+Найдено живым UI-тестом collection-grouping: `GRAMMAR_TOPIC` НЕ был в толерантном наборе. Apply падал **500** на реальных payload дока (`tutor_chat`), хотя стриминг/группировка/чип работали:
+- **`explanationRu` обязателен**, но модель кладёт контент в `contentRu`/`explanation` или только в `rules` → `GrammarTopicPayload.parse` бросал ZodError → 500 (не 400, т.к. parse — в `apply-db`, не на границе).
+- **`category` сырой**: модель эмитит `"CASES"` (нет в enum `GrammarCategory`) → Prisma reject.
+- `pitfallsRu` вместо `pitfalls`.
+- **`rules[].rule` — строка ИЛИ объект**, `rules[].examples` — строки ИЛИ `{de,ru}`. Коэрсинга не было → после починки парса правила сохранялись как `"[object Object]"` (видно на деталке: и в объяснении-синтезе, и в карточке «Правила»).
+
+**Фикс** (`tool.ts`): `GrammarTopicPayload` → `z.preprocess(normGrammarTopic, GrammarTopicFields)`:
+- `normGrammarCategory` — синоним-мап (`CASES→CASE`, `ZEITFORM→TENSE`, `KONJUNKTIV→SUBJUNCTIVE`, …) + фолбэк `OTHER`.
+- `explanationRu` из `explanationRu|explanation|contentRu|content|description…`; если пусто — синтез из текста правил.
+- `pitfallsRu→pitfalls`; `ruleText()`/`ruleExampleText()` вытаскивают строку из строки/вложенного объекта (никогда `String(obj)`); пример `{de,ru}` → немецкая строка.
+- Вынес `GrammarTopicFields` (ZodObject) отдельно — `PATCH /api/grammar/[id]` делает `.partial()` (у `ZodEffects` его нет).
+
+**Верификация (live):** Apply того же зависшего proposal по его id → **200**; тема создаётся, авто-раскладывается (`Падежи → Genitiv`), деталка рендерит правила реальным текстом + примеры без `[object Object]`. `tsc` чисто; `vitest` 137→138 (новый `grammar-payload.test.ts` с точными формами модели). Прямое подтверждение пункта «на будущее» ниже: новый target_type без `preprocess` = мина.
+
+> Замечание из этого же теста (НЕ баг приложения): обрыв ответа в доке при моём прогоне был артефактом быстрых `scroll`/`screenshot` поверх захламлённого треда — прямой `fetch` к `/api/ai/chat` отдаёт полный ответ (`finish: STOP` + `proposal` + `done`). Серверный стриминг исправен.
 
 ## Профилактика / на будущее
 - Рассмотреть **валидацию на persist** (хранить уже нормализованный payload), чтобы кривое предложение вообще не доходило до карточки.

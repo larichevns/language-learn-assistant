@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ApiError, handleApiError, successResponse } from '@/lib/api/response';
 import { requireUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/db/client';
-import { GrammarTopicPayload } from '@/lib/ai/propose/tool';
+import { GrammarTopicFields } from '@/lib/ai/propose/tool';
 
 const json = (v: unknown): Prisma.InputJsonValue | undefined =>
   v == null ? undefined : (v as Prisma.InputJsonValue);
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const user = await requireUser();
     const { id } = await params;
     const body = await req.json().catch(() => null);
-    const parsed = GrammarTopicPayload.partial().safeParse(body);
+    const parsed = GrammarTopicFields.partial().safeParse(body);
     if (!parsed.success) return handleApiError(new ApiError('invalid_input', 'Invalid update', 400));
     const g = parsed.data;
 

@@ -95,21 +95,10 @@ export const VocabEntryPayload = z.object({
   subgroupId: z.string().nullish(),
 });
 
-export const GrammarTopicPayload = z.object({
-  title: z.string(),
-  category: z.string(),
-  cefrLevel: z.string().nullish(),
-  explanationRu: z.string(),
-  rules: z.array(z.object({ rule: z.string(), examples: z.array(z.string()).nullish() })).nullish(),
-  examples: z.array(z.object({ de: z.string(), ru: z.string(), highlight: z.string().nullish() })).nullish(),
-  pitfalls: z.array(z.string()).nullish(),
-  // Browsable taxonomy routing (orthogonal to `category`); reuse via {g:id} from
-  // the Shared "Grammar groups" block only — see resolveGroupId(domain:'GRAMMAR').
-  group: z.string().nullish(),
-  subgroup: z.string().nullish(),
-  groupId: z.string().nullish(),
-  subgroupId: z.string().nullish(),
-});
+// GrammarTopicPayload is defined below, after the shared normalizers — it needs
+// the same tolerant z.preprocess treatment as corrections/exercises (the model
+// emits non-canonical grammar shapes: content under `contentRu`/`explanation`,
+// `pitfallsRu`, an invalid `category` like "CASES"). See normGrammarTopic.
 
 // The model emits these payloads as free-form JSON. It reliably uses sensible
 // but non-canonical key names (`explanation`, `exercises`, `question`,
@@ -191,6 +180,135 @@ function normExerciseSet(v: unknown): unknown {
   delete out.exercises; delete out.questions; delete out.tasks; delete out.exerciseItems;
   return out;
 }
+
+// ── GRAMMAR_TOPIC tolerance (same defensive pattern as corrections/exercises) ──
+// The model emits grammar payloads in non-canonical shapes: content under
+// `contentRu`/`explanation`, pitfalls under `pitfallsRu`, an invalid `category`
+// like "CASES", rules/examples as bare strings or alt keys. Normalize to the
+// canonical schema BEFORE validation so a correct answer isn't rejected (which
+// otherwise surfaces as an Apply 500). See debugging note
+// [[propose-Apply-500-на-вложенных-payload-из-за-формы-модели]].
+const GRAMMAR_CATEGORIES = new Set([
+  'ARTICLE', 'CASE', 'TENSE', 'VERB_CONJUGATION', 'SEPARABLE_VERB', 'MODAL_VERB',
+  'PREPOSITION', 'PRONOUN', 'ADJECTIVE_DECLENSION', 'WORD_ORDER', 'NEGATION',
+  'SUBJUNCTIVE', 'PASSIVE', 'OTHER',
+]);
+const GRAMMAR_CATEGORY_SYNONYMS: Record<string, string> = {
+  CASES: 'CASE', KASUS: 'CASE', FALL: 'CASE', DECLENSION: 'CASE',
+  ARTICLES: 'ARTICLE', ARTIKEL: 'ARTICLE',
+  TENSES: 'TENSE', ZEITFORM: 'TENSE', ZEITFORMEN: 'TENSE', TEMPUS: 'TENSE',
+  CONJUGATION: 'VERB_CONJUGATION', VERB: 'VERB_CONJUGATION', VERBS: 'VERB_CONJUGATION',
+  MODAL: 'MODAL_VERB', MODALS: 'MODAL_VERB', MODALVERB: 'MODAL_VERB',
+  SEPARABLE: 'SEPARABLE_VERB', SEPARABLEVERB: 'SEPARABLE_VERB',
+  PREPOSITIONS: 'PREPOSITION', PRÄPOSITION: 'PREPOSITION', PRAEPOSITION: 'PREPOSITION',
+  PRONOUNS: 'PRONOUN', PRONOMEN: 'PRONOUN',
+  ADJECTIVE: 'ADJECTIVE_DECLENSION', ADJECTIVES: 'ADJECTIVE_DECLENSION', ADJEKTIV: 'ADJECTIVE_DECLENSION',
+  WORDORDER: 'WORD_ORDER', SYNTAX: 'WORD_ORDER', SATZBAU: 'WORD_ORDER',
+  KONJUNKTIV: 'SUBJUNCTIVE', SUBJUNCTIV: 'SUBJUNCTIVE',
+  PASSIV: 'PASSIVE',
+  NEGATIONS: 'NEGATION', VERNEINUNG: 'NEGATION',
+};
+function normGrammarCategory(v: unknown): string {
+  if (typeof v !== 'string') return 'OTHER';
+  const up = v.trim().toUpperCase().replace(/[\s-]+/g, '_');
+  if (GRAMMAR_CATEGORIES.has(up)) return up;
+  return GRAMMAR_CATEGORY_SYNONYMS[up] ?? 'OTHER';
+}
+function normGrammarExample(e: unknown): unknown {
+  if (typeof e === 'string') return { de: e, ru: '', highlight: null };
+  const r = rec(e);
+  if (!r) return { de: String(e ?? ''), ru: '', highlight: null };
+  return {
+    de: firstString(r.de, r.german, r.satz, r.sentence, r.example, r.text),
+    ru: firstString(r.ru, r.russian, r.translation, r.uebersetzung, r['übersetzung']),
+    highlight: typeof r.highlight === 'string' ? r.highlight : null,
+  };
+}
+const pickStr = (o: Record<string, unknown>, keys: string[]): string => {
+  for (const k of keys) {
+    const val = o[k];
+    if (typeof val === 'string' && val.trim()) return val;
+  }
+  return '';
+};
+/** A grammar rule → display string. The model emits `rule` as a string OR a
+ *  nested object; flatten to a string (never "[object Object]"). */
+function ruleText(r: unknown): string {
+  if (typeof r === 'string') return r;
+  const o = rec(r);
+  if (!o) return '';
+  const direct = pickStr(o, ['rule', 'text', 'title', 'name', 'description', 'explanation', 'content', 'de', 'ru']);
+  if (direct) return direct;
+  const nested = rec(o.rule);
+  if (nested) {
+    const n = pickStr(nested, ['text', 'title', 'name', 'description', 'explanation', 'rule', 'de', 'ru']);
+    if (n) return n;
+    const joinedNested = Object.values(nested).filter((x): x is string => typeof x === 'string' && !!x.trim()).join(' — ');
+    if (joinedNested) return joinedNested;
+  }
+  return Object.values(o).filter((x): x is string => typeof x === 'string' && !!x.trim()).join(' — ');
+}
+/** A rule's inline example → a German string (the detail UI reads it aloud). */
+function ruleExampleText(x: unknown): string {
+  if (typeof x === 'string') return x;
+  const o = rec(x);
+  if (!o) return '';
+  return pickStr(o, ['de', 'german', 'satz', 'sentence', 'example', 'text', 'ru']);
+}
+function normGrammarTopic(v: unknown): unknown {
+  const o = rec(v);
+  if (!o) return v;
+  // rules → [{ rule:string, examples?:string[] }]. `rule` may be a string OR a
+  // nested object, examples strings OR {de,ru}; flatten both to strings so the
+  // schema + detail UI never receive an object (→ "[object Object]").
+  let rules = o.rules ?? o.rulesJson ?? null;
+  if (Array.isArray(rules))
+    rules = rules.map((r) => {
+      const rr = rec(r);
+      const ex = rr && Array.isArray(rr.examples) ? rr.examples.map(ruleExampleText).filter(Boolean) : null;
+      return { rule: ruleText(r), examples: ex && ex.length ? ex : null };
+    });
+  // examples → [{ de, ru, highlight? }]; accept bare strings / alt keys.
+  let examples = o.examples ?? o.beispiele ?? null;
+  if (Array.isArray(examples)) examples = examples.map(normGrammarExample);
+  // explanationRu is REQUIRED by the schema; the model often puts it under another
+  // key or omits it (content lives only in rules). Map alternates, then synthesize
+  // from the rules so a rules-only payload still applies.
+  let explanationRu = firstString(
+    o.explanationRu, o.explanation, o.contentRu, o.content, o.ruExplanation, o.descriptionRu, o.description,
+  );
+  if (!explanationRu && Array.isArray(rules) && rules.length)
+    explanationRu = (rules as Array<{ rule?: string }>).map((r) => r.rule).filter(Boolean).join('\n\n');
+  return {
+    ...o,
+    title: firstString(o.title, o.name, o.topic) || 'Грамматическая тема',
+    category: normGrammarCategory(o.category ?? o.type),
+    explanationRu,
+    rules,
+    examples,
+    pitfalls: o.pitfalls ?? o.pitfallsRu ?? o.pitfall ?? null,
+  };
+}
+
+// The canonical object shape — exported separately so the grammar [id] PATCH
+// route can `.partial()` it (ZodEffects from z.preprocess has no `.partial()`).
+export const GrammarTopicFields = z.object({
+  title: z.string(),
+  category: z.string(),
+  cefrLevel: z.string().nullish(),
+  explanationRu: z.string(),
+  rules: z.array(z.object({ rule: z.string(), examples: z.array(z.string()).nullish() })).nullish(),
+  examples: z.array(z.object({ de: z.string(), ru: z.string(), highlight: z.string().nullish() })).nullish(),
+  pitfalls: z.array(z.string()).nullish(),
+  // Browsable taxonomy routing (orthogonal to `category`); reuse via {g:id} from
+  // the Shared "Grammar groups" block only — see resolveGroupId(domain:'GRAMMAR').
+  group: z.string().nullish(),
+  subgroup: z.string().nullish(),
+  groupId: z.string().nullish(),
+  subgroupId: z.string().nullish(),
+});
+
+export const GrammarTopicPayload = z.preprocess(normGrammarTopic, GrammarTopicFields);
 
 export const HomeworkCorrectionPayload = z.preprocess(
   normHomeworkCorrection,
