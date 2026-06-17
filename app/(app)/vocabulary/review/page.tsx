@@ -11,6 +11,8 @@ import { buttonVariants, Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge, Spinner } from '@/components/ui/feedback';
 import { SpeakButton } from '@/components/ui/speak-button';
+import { GermanCharBar, handleGermanAltKey } from '@/components/writing/german-char-bar';
+import { useInsertableField } from '@/components/writing/use-insertable-field';
 import { cn } from '@/lib/utils';
 
 interface ReviewCard {
@@ -68,6 +70,7 @@ export default function ReviewPage() {
   const [revealed, setRevealed] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
+  const { ref: typedRef, insert: insertTyped } = useInsertableField<HTMLInputElement>(typed, setTyped);
 
   const items = data?.items ?? [];
   const current = items[index];
@@ -163,15 +166,18 @@ export default function ReviewPage() {
             {!revealed ? (
               <div className="flex flex-col gap-2">
                 <input
+                  ref={typedRef}
                   autoFocus
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}
                   onKeyDown={(e) => {
+                    if (handleGermanAltKey(e, insertTyped)) return;
                     if (e.key === 'Enter') setRevealed(true);
                   }}
                   placeholder={t(`hint_${current.direction}`)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-center outline-none focus:border-primary"
                 />
+                {view.answerDe && <GermanCharBar onInsert={insertTyped} className="justify-center" />}
                 <div className="grid grid-cols-2 gap-2">
                   <Button onClick={() => setRevealed(true)} disabled={!typed.trim()}>
                     {t('check')}
@@ -182,7 +188,7 @@ export default function ReviewPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {GRADES.map((g) => (
                   <Button key={g.grade} variant={g.variant} disabled={busy} onClick={() => grade(g.grade)}>
                     {t(g.key)}

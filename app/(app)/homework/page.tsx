@@ -8,10 +8,9 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input, Textarea } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { Composer } from '@/components/writing/composer';
 import { apiGet, apiPost } from '@/lib/api/client';
 
 interface HwRow {
@@ -104,36 +103,43 @@ export default function HomeworkPage() {
       <h1 className="mb-1 font-display text-2xl font-bold">{t('title')}</h1>
       <p className="mb-5 text-sm text-muted-foreground">{t('subtitle')}</p>
 
-      <Card className="mb-6">
-        <CardContent className="flex flex-col gap-3 p-4">
-          <Input placeholder={t('titlePlaceholder')} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea
-            placeholder={t('textPlaceholder')}
-            rows={5}
-            value={rawInput}
-            onChange={(e) => setRawInput(e.target.value)}
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent">
-              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              {imageDataUrl ? t('photoSelected') : t('photo')}
-              <input type="file" accept="image/*" className="hidden" onChange={onFile} />
-            </label>
-            {imageDataUrl && (
-              <button type="button" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => setImageDataUrl(null)}>
-                {tc('remove')}
-              </button>
-            )}
-            <Button className="ml-auto" disabled={create.isPending || !canSubmit} onClick={() => create.mutate()}>
-              {create.isPending ? <Spinner /> : tc('save')}
-            </Button>
-          </div>
+      <div className="mb-6">
+        <Composer
+          title={title}
+          onTitleChange={setTitle}
+          titlePlaceholder={t('titlePlaceholder')}
+          value={rawInput}
+          onChange={setRawInput}
+          placeholder={t('textPlaceholder')}
+          onSubmit={() => create.mutate()}
+          submitLabel={tc('save')}
+          submitting={create.isPending}
+          submitDisabled={!canSubmit}
+          footerLeft={
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent">
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                {imageDataUrl ? t('photoSelected') : t('photo')}
+                <input type="file" accept="image/*" className="hidden" onChange={onFile} />
+              </label>
+              {imageDataUrl && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setImageDataUrl(null)}
+                >
+                  {tc('remove')}
+                </button>
+              )}
+            </div>
+          }
+        >
           {imageDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageDataUrl} alt="предпросмотр" className="max-h-48 self-start rounded-lg border border-border object-contain" />
+            <img src={imageDataUrl} alt="предпросмотр" className="max-h-48 max-w-full rounded-lg border border-border object-contain" />
           )}
-        </CardContent>
-      </Card>
+        </Composer>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-10">

@@ -8,7 +8,10 @@
     "cancel": "Cancel",
     "back": "Back",
     "showDetails": "Show details",
-    "remove": "remove"
+    "remove": "remove",
+    "words": "{n, plural, one {# word} other {# words}}",
+    "chars": "{n, plural, one {# character} other {# characters}}",
+    "insertChar": "Insert {char}"
   },
   "landing": {
     "title": "Learn German with an AI assistant",

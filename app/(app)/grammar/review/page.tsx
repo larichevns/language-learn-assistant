@@ -9,7 +9,10 @@ import { apiGet } from '@/lib/api/client';
 import { postOrQueue } from '@/lib/offline/outbox';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { GermanCharBar, handleGermanAltKey } from '@/components/writing/german-char-bar';
+import { useInsertableField } from '@/components/writing/use-insertable-field';
 import { cn } from '@/lib/utils';
 
 interface GrammarReviewCard {
@@ -44,6 +47,7 @@ export default function GrammarReviewPage() {
   const [revealed, setRevealed] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const { ref: draftRef, insert: insertDraft } = useInsertableField<HTMLTextAreaElement>(draft, setDraft);
 
   const items = data?.items ?? [];
   const current = items[index];
@@ -108,13 +112,18 @@ export default function GrammarReviewPage() {
               <p className="text-sm text-muted-foreground">{t('grammarPrompt')}</p>
 
               {!revealed ? (
-                <textarea
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={t('grammarHint')}
-                  className="min-h-[80px] w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary"
-                />
+                <div className="flex flex-col gap-2">
+                  <Textarea
+                    ref={draftRef}
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => handleGermanAltKey(e, insertDraft)}
+                    placeholder={t('grammarHint')}
+                    className="min-h-[80px]"
+                  />
+                  <GermanCharBar onInsert={insertDraft} />
+                </div>
               ) : (
                 <div className="flex flex-col gap-3 animate-fade-in">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">{topic!.explanationRu}</p>
@@ -149,7 +158,7 @@ export default function GrammarReviewPage() {
                 {t('showRule')}
               </Button>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {GRADES.map((g) => (
                   <Button key={g.grade} variant={g.variant} disabled={busy} onClick={() => grade(g.grade)}>
                     {t(g.key)}

@@ -64,5 +64,14 @@ Shipped: generic `CollectionGroup` (domains VOCAB/GRAMMAR/NOTE), full taxonomy f
 - **Группа как scope чата** (открыть тред в контексте конкретной группы).
 - **Уровни глубже 2** (сейчас инвариант — ровно 2 уровня, group→subgroup).
 
+## Writing surfaces (2026-06-17)
+<!-- Updated: 2026-06-17 | comfortable text fields (Composer + умлауты) -->
+Shipped: семейство «удобного письма» — автогрост-`Textarea`/комфортный `Input`, `Composer`
+(Заметки/Домашки), панель немецких спецсимволов с вставкой в курсор + Alt-хоткеи
+(Грамм-практика/Упражнения/Vocab-recall). Паттерн: [[автогрост-textarea-и-вставка-умлаутов-в-курсор]]. Deferred:
+- **Markdown write/preview для Заметок** — пользователь выбрал вариант без него; `react-markdown` уже в проекте (пока только рендер). Включить write/preview-тогл, если конспекты захотят форматирование.
+- **Умлауты/спецсимволы в Assistant-доке** — hero-композер намеренно оставлен как есть; панель можно добавить позже, аккуратно, не ломая pill→bar→window.
+- **Голосовой ввод** в поля письма (Web Speech API) — пересекается с TTS-пунктом выше.
+
 ## Related
 - [[mvp-scope-and-phases]] · `PLAN.md` §7 Phase 4

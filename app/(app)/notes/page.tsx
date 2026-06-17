@@ -11,9 +11,8 @@ import { flattenGroupOptions, type GroupLabels, totalItems } from '@/components/
 import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { NoteCard, type NoteRow } from '@/components/notes/note-card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input, Textarea } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/feedback';
+import { Composer } from '@/components/writing/composer';
 import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api/client';
 import type { CreateGroupDto, GroupNode, GroupTree } from '@/lib/api/collection-groups';
 
@@ -152,15 +151,20 @@ export default function NotesPage() {
       <h1 className="mb-1 font-display text-2xl font-bold">{t('title')}</h1>
       <p className="mb-5 text-sm text-muted-foreground">{t('subtitle')}</p>
 
-      <Card className="mb-6">
-        <CardContent className="flex flex-col gap-3 p-4">
-          <Input placeholder={t('titlePlaceholder')} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea placeholder={t('textPlaceholder')} rows={4} value={rawInput} onChange={(e) => setRawInput(e.target.value)} />
-          <Button className="self-end" disabled={create.isPending || !rawInput.trim()} onClick={() => create.mutate()}>
-            {create.isPending ? <Spinner /> : tc('save')}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="mb-6">
+        <Composer
+          title={title}
+          onTitleChange={setTitle}
+          titlePlaceholder={t('titlePlaceholder')}
+          value={rawInput}
+          onChange={setRawInput}
+          placeholder={t('textPlaceholder')}
+          onSubmit={() => create.mutate()}
+          submitLabel={tc('save')}
+          submitting={create.isPending}
+          submitDisabled={!rawInput.trim()}
+        />
+      </div>
 
       {loadError && <p className="mb-4 text-sm text-destructive">{tg('loadError')}</p>}
       {moveError && <p className="mb-4 text-sm text-destructive">{moveError}</p>}

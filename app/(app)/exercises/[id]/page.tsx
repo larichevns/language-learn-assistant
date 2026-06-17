@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { GermanCharBar, handleGermanAltKey } from '@/components/writing/german-char-bar';
+import { useInsertableField } from '@/components/writing/use-insertable-field';
 import { cn } from '@/lib/utils';
 
 interface Item {
@@ -29,6 +31,37 @@ interface ExSet {
   status: string;
   score?: number | null;
   items: Item[];
+}
+
+/** Free-text answer field. Answers are German, so it offers the umlaut bar while focused. */
+function AnswerInput({
+  value,
+  onChange,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  const { ref, insert } = useInsertableField<HTMLInputElement>(value, onChange);
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className="flex flex-col gap-2">
+      <Input
+        ref={ref}
+        disabled={disabled}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onKeyDown={(e) => handleGermanAltKey(e, insert)}
+      />
+      {focused && !disabled && <GermanCharBar onInsert={insert} />}
+    </div>
+  );
 }
 
 export default function ExerciseDetailPage() {
@@ -99,11 +132,11 @@ export default function ExerciseDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <Input
+                  <AnswerInput
                     disabled={isGraded}
                     placeholder={t('answerPlaceholder')}
                     value={isGraded ? (item.userAnswer ?? '') : (answers[item.id] ?? '')}
-                    onChange={(e) => setAnswers((a) => ({ ...a, [item.id]: e.target.value }))}
+                    onChange={(v) => setAnswers((a) => ({ ...a, [item.id]: v }))}
                   />
                 )}
 
