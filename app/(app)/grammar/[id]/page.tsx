@@ -44,7 +44,7 @@ export default function GrammarDetailPage() {
       <Link href="/grammar" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> {t('allTopics')}
       </Link>
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <h1 className="font-display text-2xl font-bold">{data.title}</h1>
         {data.cefrLevel && <Badge variant="muted">{data.cefrLevel}</Badge>}
       </div>

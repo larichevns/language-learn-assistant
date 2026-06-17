@@ -21,7 +21,7 @@ export function Topbar({ name, email, isAdmin }: { name?: string | null; email?:
       <div className="flex items-center gap-1">
         <Button variant="outline" size="sm" onClick={toggle} className="gap-1.5">
           <Sparkles className="h-4 w-4 text-primary" />
-          {t('assistant')}
+          <span className="hidden sm:inline">{t('assistant')}</span>
         </Button>
         <ThemeToggle />
         <AccountMenu name={name} email={email} />

@@ -99,6 +99,8 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    /* Long German compound words wrap instead of forcing horizontal scroll on phones. */
+    overflow-wrap: break-word;
   }
 }
 

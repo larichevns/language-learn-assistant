@@ -47,7 +47,7 @@ export default function NoteDetailPage() {
         <ArrowLeft className="h-4 w-4" /> {t('allNotes')}
       </Link>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold">{data.title ?? t('fallbackTitle')}</h1>
+        <h1 className="min-w-0 font-display text-2xl font-bold">{data.title ?? t('fallbackTitle')}</h1>
         <Button variant="outline" className="gap-2" onClick={openDock}>
           <Sparkles className="h-4 w-4 text-primary" /> {t('parse')}
         </Button>

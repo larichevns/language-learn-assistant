@@ -50,7 +50,7 @@ function Bar({ label, count, max, danger }: { label: string; count: number; max:
   const w = Math.round((count / max) * 100);
   return (
     <div className="mb-2 flex items-center gap-2 text-sm">
-      <span className="w-32 shrink-0 truncate text-muted-foreground">{label}</span>
+      <span className="w-24 shrink-0 truncate text-muted-foreground sm:w-32">{label}</span>
       <div className="h-2 flex-1 rounded-full bg-muted">
         <div className={cn('h-2 rounded-full', danger ? 'bg-destructive' : 'bg-primary')} style={{ width: `${Math.max(6, w)}%` }} />
       </div>
@@ -163,7 +163,7 @@ export default function ProgressPage() {
             <ul className="flex flex-col gap-2">
               {tl.items.map((ev) => (
                 <li key={ev.id} className="flex items-center justify-between gap-3 rounded-lg bg-accent/50 px-3 py-2 text-sm">
-                  <span>{evText(ev)}</span>
+                  <span className="min-w-0">{evText(ev)}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">{new Date(ev.occurredAt).toLocaleDateString()}</span>
                 </li>
               ))}

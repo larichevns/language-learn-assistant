@@ -23,7 +23,7 @@ export function AccountMenu({ name, email }: { name?: string | null; email?: str
         <UserIcon className="h-4 w-4" />
       </Button>
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-56 animate-fade-in rounded-xl border border-border bg-popover p-2 shadow-lg">
+        <div className="absolute right-0 top-11 z-50 w-56 max-w-[calc(100vw_-_1rem)] animate-fade-in rounded-xl border border-border bg-popover p-2 shadow-lg">
           <div className="px-2 py-1.5">
             <p className="truncate text-sm font-medium">{name ?? 'Аккаунт'}</p>
             {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}

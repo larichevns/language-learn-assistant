@@ -51,7 +51,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">
             {session?.user.name ? t('greeting', { name: session.user.name }) : t('greetingNoName')}

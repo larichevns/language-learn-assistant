@@ -62,7 +62,7 @@ export default function HomeworkDetailPage() {
       </Link>
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold">{data.title ?? t('fallbackTitle')}</h1>
+        <h1 className="min-w-0 font-display text-2xl font-bold">{data.title ?? t('fallbackTitle')}</h1>
         <Button onClick={() => correct.mutate()} disabled={correct.isPending} className="gap-2">
           {correct.isPending ? <Spinner /> : <Wand2 className="h-4 w-4" />} {t('check')}
         </Button>
@@ -72,7 +72,7 @@ export default function HomeworkDetailPage() {
         <CardContent className="flex flex-col gap-3 p-4">
           {data.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.imageUrl} alt={t('photoAlt')} className="max-h-80 self-start rounded-lg border border-border object-contain" />
+            <img src={data.imageUrl} alt={t('photoAlt')} className="max-h-80 max-w-full self-start rounded-lg border border-border object-contain" />
           )}
           {data.rawInput && data.rawInput !== '(фото-домашка)' && (
             <p className="whitespace-pre-wrap text-sm leading-relaxed">{data.rawInput}</p>

@@ -24,6 +24,7 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 - [[vocab-grouping]] — двухуровневая иерархия словаря (группа→подгруппа) + авто-раскладка ИИ (create-or-reuse); status: implemented (обобщается в [[collection-grouping]])
 - [[collection-grouping]] — обобщение группировки на все вкладки (CollectionGroup, домены VOCAB/GRAMMAR/NOTE) + производная группировка домашки/упражнений + богаче грамматика; status: implemented (the "what/why")
 - [[collection-grouping-implementation-plan]] — solution design: схема-дельта + hand-authored fold-in миграция, доменный движок групп, обобщение ИИ-цикла, generic GroupedAccordion, build-слайсы + тест-план (the "how")
+- [[mobile-responsive-fixes]] — мобильный адаптив: устранение горизонтального переполнения (frontend-only, mobile-first); status: draft — на ревью
 - [[SPEC_TEMPLATE]] — template for new feature specs
 
 ## Knowledge
@@ -48,6 +49,7 @@ AI tutor for a Russian speaker learning German. Single Next.js app. Master bluep
 ### Scenarios / Integrations / Patterns
 - [[PWA-офлайн-SW-кэширует-чтения-IndexedDB-outbox-копит-записи]] — офлайн ревью из SW-кэша + очередь грейдов в IndexedDB, флаш при возврате связи (без Background Sync — ради iOS)
 - [[вложенные-Radix-аккордеоны-делят-одно-localStorage-состояние-через-merge]] — сгруппированный словарь: один массив open-id на два уровня аккордеона, scope+merge вместо replace
+- [[автогрост-textarea-и-вставка-умлаутов-в-курсор]] — семейство «удобного письма»: автогрост-`Textarea`, `Composer`, панель немецких умлаутов (вставка в курсор через `onMouseDown`+`preventDefault`)
 
 ### Debugging
 - [[propose-Apply-500-на-вложенных-payload-из-за-формы-модели]] — Apply 500 для HOMEWORK_CORRECTION/EXERCISE_SET; модель эмитит неканоничную форму → толерантные `z.preprocess` + привязка homeworkId из scope

@@ -44,6 +44,9 @@ TypeScript end to end. Strict mode on.
 ## Frontend patterns
 - TanStack Query for server state; React Hook Form + zod for forms; zustand only for genuinely global client state (dock/thread/shell).
 - shadcn/ui primitives; Tailwind tokens from the theme (indigo/teal, dark+light `class`). WCAG 2.1 AA.
+- **Long-form text** uses `Composer` (Notes/Homework) or the autosizing base `Textarea`; **German entry** mounts `GermanCharBar` (insert-at-cursor + Alt-hotkeys). Inputs are 16px to avoid iOS-zoom. See [[автогрост-textarea-и-вставка-умлаутов-в-курсор]].
+- **Mobile-first, no horizontal overflow**: base class = phone, scale up with `sm:`/`md:`. No bare `grid-cols-3/4` (give a `grid-cols-1/2` base); multi-child rows always `flex-wrap`; fixed px-widths only as `w-full sm:w-N`; long content wraps (global `overflow-wrap` in `globals.css`, `min-w-0` on flex children with truncate); tables live in `overflow-x-auto`; images get `max-w-full`. See [[mobile-responsive-fixes]].
+<!-- Updated: 2026-06-17 | comfortable writing surfaces + mobile-first responsive rules -->
 
 ## Git / worktrees
 - See `.claude/rules/git-worktrees.md`. Branch format `type/short-desc` (`feat/ai-envelope`).

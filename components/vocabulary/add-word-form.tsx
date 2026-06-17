@@ -44,9 +44,9 @@ export function AddWordForm() {
             if (lemma.trim() && translationRu.trim()) add.mutate();
           }}
         >
-          <Input className="w-44" placeholder={t('wordPlaceholder')} value={lemma} onChange={(e) => setLemma(e.target.value)} />
+          <Input className="w-full sm:w-44" placeholder={t('wordPlaceholder')} value={lemma} onChange={(e) => setLemma(e.target.value)} />
           <select
-            className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm sm:w-auto"
             value={pos}
             onChange={(e) => setPos(e.target.value)}
           >
@@ -56,7 +56,7 @@ export function AddWordForm() {
               </option>
             ))}
           </select>
-          <Input className="w-44" placeholder={t('translationPlaceholder')} value={translationRu} onChange={(e) => setTranslationRu(e.target.value)} />
+          <Input className="w-full sm:w-44" placeholder={t('translationPlaceholder')} value={translationRu} onChange={(e) => setTranslationRu(e.target.value)} />
           <Button type="submit" disabled={add.isPending} className="gap-1.5">
             {add.isPending ? <Spinner /> : <Plus className="h-4 w-4" />} {tc('add')}
           </Button>

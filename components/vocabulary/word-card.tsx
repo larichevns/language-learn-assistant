@@ -35,7 +35,7 @@ export function WordCard({
     <Card>
       <CardContent className="flex flex-col gap-1 p-4">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <span className="de font-display text-lg">
               {word.gender ? `${word.gender.toLowerCase()} ${word.lemma.replace(/^(der|die|das)\s+/i, '')}` : word.lemma}
             </span>
@@ -49,7 +49,7 @@ export function WordCard({
             {word.pluralForm && <Badge variant="deutsch">pl. {word.pluralForm}</Badge>}
             {dueNow && <Badge variant="default">{t('dueBadge')}</Badge>}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             {moving && <Spinner className="text-muted-foreground" />}
             <Select
               value={word.groupId ?? UNGROUPED_VALUE}

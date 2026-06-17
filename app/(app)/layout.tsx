@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar isAdmin={isAdmin} streak={streak} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar name={session.user.name} email={session.user.email} isAdmin={isAdmin} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 overflow-x-clip">{children}</main>
       </div>
       <AssistantDock />
       <OfflineSync />

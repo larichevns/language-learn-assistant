@@ -33,6 +33,7 @@ export default function AdminUsersPage() {
   return (
     <Card>
       <CardContent className="p-0">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-left text-muted-foreground">
             <tr>
@@ -70,6 +71,7 @@ export default function AdminUsersPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </CardContent>
     </Card>
   );

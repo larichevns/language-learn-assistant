@@ -89,7 +89,7 @@ export function ProposalCard({
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
 
       {!resolved && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button size="sm" variant="success" disabled={busy !== null} onClick={() => act('apply')}>
             {t('apply')}
           </Button>

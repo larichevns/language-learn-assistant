@@ -31,7 +31,7 @@ export function MobileNav({ isAdmin }: { isAdmin: boolean }) {
       {open && (
         <div className="fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <nav className="absolute left-0 top-0 flex h-full w-64 animate-fade-in flex-col gap-1 border-r border-border bg-card p-3 shadow-xl">
+          <nav className="absolute left-0 top-0 flex h-full w-[min(16rem,85vw)] animate-fade-in flex-col gap-1 border-r border-border bg-card p-3 shadow-xl">
             <div className="mb-2 flex items-center justify-between px-2">
               <span className="font-display font-bold">LLA</span>
               <Button variant="ghost" size="icon" aria-label="Закрыть" onClick={() => setOpen(false)}>

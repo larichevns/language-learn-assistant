@@ -95,7 +95,7 @@ export default function ExercisesPage() {
 
       <Card className="mb-4">
         <CardContent className="flex flex-wrap items-end gap-2 p-4">
-          <select className="h-10 rounded-lg border border-input bg-background px-3 text-sm" value={grammarTopicId} onChange={(e) => setGrammarTopicId(e.target.value)}>
+          <select className="h-10 max-w-full rounded-lg border border-input bg-background px-3 text-sm" value={grammarTopicId} onChange={(e) => setGrammarTopicId(e.target.value)}>
             <option value="">{t('byCurrentUnit')}</option>
             {grammar.data?.items.map((g) => (
               <option key={g.id} value={g.id}>
