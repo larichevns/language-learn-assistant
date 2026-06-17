@@ -4,7 +4,7 @@
  * scope object. Thread summary + verbatim history are passed in by the caller
  * (which owns get-or-create of the ChatThread).
  */
-import type { ScopeType } from '@prisma/client';
+import type { GroupDomain, ScopeType } from '@prisma/client';
 import { prisma } from '../../db/client';
 import type { Message } from '../types';
 import type { EnvelopeData } from './builder';
@@ -58,15 +58,41 @@ export async function assembleEnvelopeFromDb(opts: {
   const { userId } = opts;
   const now = new Date();
 
-  const [profile, vocab, grammarTopics, currentUnit, scopeObject, dueCards, lapsedCards, recentErrors] =
-    await Promise.all([
+  const [
+    profile,
+    vocab,
+    grammarTopics,
+    currentUnit,
+    scopeObject,
+    dueCards,
+    lapsedCards,
+    recentErrors,
+    collGroups,
+  ] = await Promise.all([
       prisma.learnerProfile.findUnique({ where: { userId } }),
-      prisma.vocabEntry.findMany({ where: { userId }, take: 40, orderBy: { updatedAt: 'desc' } }),
+      prisma.vocabEntry.findMany({
+        where: { userId },
+        take: 40,
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          lemma: true,
+          pos: true,
+          translationRu: true,
+          cefrLevel: true,
+          group: { select: { name: true, parent: { select: { name: true } } } },
+        },
+      }),
       prisma.grammarTopic.findMany({
         where: { userId },
         take: 50,
         orderBy: { updatedAt: 'desc' },
-        select: { title: true, category: true, masteryScore: true, masteryUpdatedAt: true },
+        select: {
+          title: true,
+          category: true,
+          masteryScore: true,
+          masteryUpdatedAt: true,
+          group: { select: { name: true, parent: { select: { name: true } } } },
+        },
       }),
       prisma.unit.findFirst({ where: { course: { userId }, isCurrent: true } }),
       loadScopeObject(userId, opts.scopeType, opts.scopeId),
@@ -89,12 +115,37 @@ export async function assembleEnvelopeFromDb(opts: {
         take: 10,
         select: { source: true, category: true, errorTypeJson: true },
       }),
+      // Group taxonomy for layer 02 create-or-reuse — ALL domains in one query;
+      // split into per-domain arrays below (each picks its matching _count relation).
+      prisma.collectionGroup.findMany({
+        where: { userId },
+        orderBy: [{ orderIndex: 'asc' }, { name: 'asc' }],
+        select: {
+          id: true,
+          name: true,
+          parentId: true,
+          domain: true,
+          _count: { select: { vocabEntries: true, grammarTopics: true, classNotes: true } },
+        },
+      }),
     ]);
+
+  // Split the single all-domain group query into per-domain arrays for the
+  // shared envelope blocks (each picks its matching _count relation).
+  type GNode = { id: string; name: string; parentId: string | null; count: number };
+  const pick = (d: GroupDomain, rel: 'vocabEntries' | 'grammarTopics' | 'classNotes'): GNode[] =>
+    collGroups
+      .filter((g) => g.domain === d)
+      .map((g) => ({ id: g.id, name: g.name, parentId: g.parentId, count: g._count[rel] }));
+  const vocabGroups = pick('VOCAB', 'vocabEntries');
+  const grammarGroups = pick('GRAMMAR', 'grammarTopics');
+  const noteGroups = pick('NOTE', 'classNotes');
 
   // Decay once, reuse for the cached shared layer (bucketed) and the focus-block (ranked).
   const topicsDecayed = grammarTopics.map((t) => ({
     title: t.title,
     category: t.category,
+    groupPath: t.group ? (t.group.parent ? `${t.group.parent.name}→${t.group.name}` : t.group.name) : undefined,
     decayed: decayedMastery(t.masteryScore, t.masteryUpdatedAt, now, t.category),
   }));
 
@@ -112,12 +163,17 @@ export async function assembleEnvelopeFromDb(opts: {
       pos: v.pos,
       translationRu: v.translationRu,
       cefrLevel: v.cefrLevel ?? undefined,
+      groupPath: v.group ? (v.group.parent ? `${v.group.parent.name}→${v.group.name}` : v.group.name) : undefined,
     })),
     grammarTopics: topicsDecayed.slice(0, 40).map((t) => ({
       title: t.title,
       category: t.category ?? undefined,
       bucket: masteryBucket(t.decayed),
+      groupPath: t.groupPath,
     })),
+    vocabGroups,
+    grammarGroups,
+    noteGroups,
   });
 
   const focus = formatFocus({

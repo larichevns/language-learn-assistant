@@ -5,6 +5,7 @@
     "loading": "Loading…",
     "save": "Save",
     "add": "Add",
+    "cancel": "Cancel",
     "back": "Back",
     "showDetails": "Show details",
     "remove": "remove"
@@ -94,7 +95,26 @@
     "translationPlaceholder": "translation",
     "hint": "…or just tell the Assistant «add the word aufstehen» — it fills everything in.",
     "dueBadge": "due",
-    "empty": "Empty so far. Add your first word or ask the Assistant."
+    "empty": "Empty so far. Add your first word or ask the Assistant.",
+    "saveError": "Couldn’t save the word. Please try again."
+  },
+  "group": {
+    "addGroup": "Group",
+    "addSubgroup": "Subgroup",
+    "subgroupOf": "Subgroup of «{name}»",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteTitle": "Delete «{name}»?",
+    "deleteConfirm": "Subgroups will be deleted. {count, plural, =0 {No items in this branch.} one {# item will become ungrouped.} other {# items will become ungrouped.}}",
+    "moveTo": "Move to…",
+    "ungrouped": "Ungrouped",
+    "namePlaceholder": "Topic name",
+    "newGroup": "new group",
+    "newSubgroup": "new subgroup",
+    "emptyGroup": "No subgroups or items yet. Add a subgroup or move an item here.",
+    "emptySubgroup": "Empty so far — move an item here.",
+    "loadError": "Couldn't load groups. The list below still works.",
+    "genericError": "Something went wrong. Please try again."
   },
   "review": {
     "progress": "{index} / {total}",
@@ -140,13 +160,18 @@
     "corrections": "Corrections",
     "allHomework": "All homework",
     "fallbackTitle": "Homework",
-    "photoAlt": "homework"
+    "photoAlt": "homework",
+    "bucketReview": "To review",
+    "bucketCorrected": "Corrected",
+    "bucketDrafts": "Drafts",
+    "bucketArchive": "Archive"
   },
   "grammar": {
     "title": "Grammar",
     "review": "Review",
     "subtitle": "{count} topics · ask the Assistant «explain Perfekt» — it explains and offers to save.",
     "mastery": "Mastered {pct}%",
+    "rules": "Rules",
     "examples": "Examples",
     "pitfalls": "Pitfalls",
     "empty": "No topics yet. Ask the Assistant «explain Akkusativ».",
@@ -163,7 +188,8 @@
     "check": "Check",
     "tasks": "{count} tasks",
     "allExercises": "All exercises",
-    "answerPlaceholder": "answer"
+    "answerPlaceholder": "answer",
+    "bucketOther": "Other"
   },
   "notes": {
     "title": "Class notes",
@@ -171,6 +197,7 @@
     "titlePlaceholder": "Title (optional)",
     "textPlaceholder": "Lesson notes…",
     "empty": "No notes yet.",
+    "noTitle": "Untitled",
     "parse": "Parse with Assistant",
     "newWords": "New words",
     "grammar": "Grammar",
@@ -183,7 +210,11 @@
     "scopeGlobal": "Whole course",
     "empty": "Ask anything about German — or say «add the word …» and I'll set it up.",
     "placeholder": "Message… (Enter to send)",
-    "thinking": "Thinking…"
+    "thinking": "Thinking…",
+    "stop": "Stop",
+    "sendLabel": "Send",
+    "newChat": "New chat",
+    "closeLabel": "Close"
   },
   "proposal": {
     "apply": "Apply",

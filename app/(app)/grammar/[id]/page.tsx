@@ -57,6 +57,25 @@ export default function GrammarDetailPage() {
         </CardContent>
       </Card>
 
+      {data.rulesJson && data.rulesJson.length > 0 && (
+        <Card className="mb-4">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <h2 className="text-sm font-semibold">{t('rules')}</h2>
+            {data.rulesJson.map((r, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <p className="text-sm leading-relaxed [&_strong]:font-semibold">{r.rule}</p>
+                {r.examples?.map((ex, j) => (
+                  <div key={j} className="flex items-center gap-1.5 pl-3 text-sm">
+                    <SpeakButton text={ex} />
+                    <span className="de">{ex}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {data.examplesJson && data.examplesJson.length > 0 && (
         <Card className="mb-4">
           <CardContent className="flex flex-col gap-2 p-5">

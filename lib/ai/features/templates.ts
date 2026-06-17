@@ -52,7 +52,10 @@ export const FEATURES: Record<string, FeatureSpec> = {
   grammar_explain: {
     slug: 'grammar_explain',
     model: CHAT_MODEL,
-    reasoningEffort: 'low',
+    // 'medium' (was 'low') → 8192 thinking tokens (gemini.ts mapThinking) for a
+    // deeper, structured explanation. Scoped to this one infrequent feature;
+    // tutor_chat (the hot path) deliberately stays 'low'.
+    reasoningEffort: 'medium',
     proposeTargets: ['GRAMMAR_TOPIC', 'EXERCISE_SET'],
   },
   thread_summarize: {
@@ -62,8 +65,8 @@ export const FEATURES: Record<string, FeatureSpec> = {
     proposeTargets: [],
     isBackground: true,
     systemPrompt:
-      'You compress a German-tutoring dialogue into a short Russian summary. Keep: decisions made, which German words were hard, open questions, exercise progress. Output ≤ 250 words, in Russian.',
-    userPromptTemplate: 'Сожми этот диалог:\n\n{{dialogue}}',
+      'You maintain a ROLLING Russian summary of a German-tutoring dialogue. The input may begin with the existing summary, followed by newer turns — merge them into ONE consolidated summary (do not just append, do not drop facts from the existing summary). Keep: decisions made, which German words/grammar were hard, open questions, exercise progress. Output ≤ 250 words, in Russian, plain text.',
+    userPromptTemplate: 'Обнови свёрнутую сводку треда из этого материала:\n\n{{dialogue}}',
   },
   // Nightly rollup's optional weekly note. Background → never bills, skips limits.
   // Uses the chat model (not lite) for tighter format adherence — `cleanNote`

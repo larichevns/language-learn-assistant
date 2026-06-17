@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/feedback';
 import type { ChatProposal } from '@/lib/ai-client/chat-stream';
 import { cn } from '@/lib/utils';
+import { ProposalGroupPath } from './proposal-group-path';
 
 const TARGET_LABELS: Record<string, string> = {
   VOCAB_ENTRY: 'Новое слово',
@@ -75,6 +76,8 @@ export function ProposalCard({
       </div>
 
       <p className="mt-2 font-medium leading-snug">{proposal.summary}</p>
+
+      <ProposalGroupPath targetType={proposal.targetType} payload={proposal.payload} />
 
       <details className="mt-2">
         <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">{tc('showDetails')}</summary>

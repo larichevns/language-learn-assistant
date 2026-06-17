@@ -7,6 +7,7 @@ import { streamCompletion } from '@/lib/ai/orchestrator';
 import { persistProposal } from '@/lib/ai/propose/persist';
 import { proposeToolDecl } from '@/lib/ai/propose/tool';
 import { appendMessage, loadHistory, resolveThread } from '@/lib/ai/thread/service';
+import { summarizeThreadIfNeeded } from '@/lib/ai/thread/summarize';
 import type { ToolCall } from '@/lib/ai/types';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
 
       let assistantText = '';
       const toolCalls: ToolCall[] = [];
+      let failed = false;
       try {
         for await (const chunk of streamCompletion({
           featureSlug: feature,
@@ -78,11 +80,29 @@ export async function POST(req: NextRequest) {
           if (chunk.usage) send('usage', chunk.usage);
           if (chunk.finishReason) send('finish', { reason: chunk.finishReason });
         }
+      } catch (e) {
+        failed = true;
+        // Client Stop / disconnect aborts req.signal — that's a graceful stop, not
+        // an error worth surfacing (the client is already gone).
+        if (!req.signal.aborted) {
+          if (e instanceof ApiError) {
+            send('error', { code: e.code, message: e.message, status: e.status, retryAfter: e.headers?.['Retry-After'] });
+          } else {
+            send('error', { message: (e as Error).message });
+          }
+        }
+      }
 
+      // Persist the assistant turn only when it carries text — including a partial
+      // answer cut short by Stop/timeout. An empty turn would leave the user turn
+      // dangling and the next send would answer the stale question first.
+      if (assistantText.trim()) {
         await appendMessage(thread.id, 'ASSISTANT', assistantText, {
           tools: toolCalls.map((t) => t.name),
-        });
+        }).catch(() => {});
+      }
 
+      if (!failed) {
         for (const call of toolCalls) {
           if (call.name !== 'propose') continue;
           try {
@@ -100,16 +120,20 @@ export async function POST(req: NextRequest) {
             send('error', { message: `proposal: ${(e as Error).message}` });
           }
         }
-
         send('done', { threadId: thread.id });
-      } catch (e) {
-        if (e instanceof ApiError) {
-          send('error', { code: e.code, message: e.message, status: e.status, retryAfter: e.headers?.['Retry-After'] });
-        } else {
-          send('error', { message: (e as Error).message });
-        }
-      } finally {
+      }
+
+      try {
         controller.close();
+      } catch {
+        /* already closed by the client's abort */
+      }
+
+      // Rolling summary: fold turns older than the window into threadSummary so a
+      // long thread keeps its early context instead of silently dropping it. Runs
+      // after the response stream has closed — background, non-billed, best-effort.
+      if (!failed) {
+        await summarizeThreadIfNeeded(thread.id, user.userId).catch(() => {});
       }
     },
   });

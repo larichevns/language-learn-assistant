@@ -47,7 +47,7 @@ export const proposeToolDecl: ToolDecl = {
       payload: {
         type: 'STRING',
         description:
-          "A JSON object encoded as a string with the COMPLETE content. Shape depends on target_type. For VOCAB_ENTRY: {lemma, pos (NOUN|VERB|ADJECTIVE|...), translationRu, gender (the ARTICLE 'DER'|'DIE'|'DAS' for nouns — never 'masculine'), pluralForm, genitiveForm, isSeparable, separablePrefix, auxiliary ('HABEN'|'SEIN'), partizipII, praeteritum, governsCase ('NOMINATIV'|'AKKUSATIV'|'DATIV'|'GENITIV'), cefrLevel ('A1'..'C2'), tags:[...], examples:[{de,ru}]}. For HOMEWORK_CORRECTION: {corrections:[{original, corrected, errorType (Kasus|Genus|Numerus|Wortstellung|Verbkonjugation|Präposition|Artikel|Rechtschreibung|Zeitform|Sonstiges), explanationRu}]} — ALWAYS a `corrections` ARRAY (one entry per mistake); the homework is bound automatically, do not invent an id. For EXERCISE_SET: {title, cefrLevel, items:[{type (CLOZE|MCQ|TRANSLATION_RU_DE|TRANSLATION_DE_RU|ARTICLE_GENDER|PERFEKT_FORM|CONJUGATION|WORD_ORDER|CASE_DECLENSION|PLURAL_FORM|SEPARABLE_VERB|MATCHING), prompt, answer, acceptableAnswers:[...], explanationRu}]} — the field is `items` with `prompt`+`answer`.",
+          "A JSON object encoded as a string with the COMPLETE content. Shape depends on target_type. For VOCAB_ENTRY: {lemma, pos (NOUN|VERB|ADJECTIVE|...), translationRu, gender (the ARTICLE 'DER'|'DIE'|'DAS' for nouns — never 'masculine'), pluralForm, genitiveForm, isSeparable, separablePrefix, auxiliary ('HABEN'|'SEIN'), partizipII, praeteritum, governsCase ('NOMINATIV'|'AKKUSATIV'|'DATIV'|'GENITIV'), cefrLevel ('A1'..'C2'), tags:[...], examples:[{de,ru}], group (broad theme name, e.g. \"Еда\"), subgroup (narrow facet, e.g. \"Овощи\"), and OPTIONALLY groupId/subgroupId copied from a {g:id} token in the Shared \"Vocabulary groups\" block to REUSE an existing group instead of duplicating it}. For HOMEWORK_CORRECTION: {corrections:[{original, corrected, errorType (Kasus|Genus|Numerus|Wortstellung|Verbkonjugation|Präposition|Artikel|Rechtschreibung|Zeitform|Sonstiges), explanationRu}]} — ALWAYS a `corrections` ARRAY (one entry per mistake); the homework is bound automatically, do not invent an id. For EXERCISE_SET: {title, cefrLevel, items:[{type (CLOZE|MCQ|TRANSLATION_RU_DE|TRANSLATION_DE_RU|ARTICLE_GENDER|PERFEKT_FORM|CONJUGATION|WORD_ORDER|CASE_DECLENSION|PLURAL_FORM|SEPARABLE_VERB|MATCHING), prompt, answer, acceptableAnswers:[...], explanationRu}]} — the field is `items` with `prompt`+`answer`. For GRAMMAR_TOPIC: also set `group` (broad theme, e.g. \"Времена\") and `subgroup` (narrow, e.g. \"Прошедшее\"); to REUSE, copy a {g:id} token FROM the Shared \"Grammar groups\" block into groupId/subgroupId — never from another domain's block. For CLASS_NOTE: same, reusing from the \"Note groups\" block. The `category` enum on a grammar topic is separate from its `group` — set both.",
       },
     },
     required: ['target_type', 'summary', 'payload'],
@@ -89,6 +89,10 @@ export const VocabEntryPayload = z.object({
   cefrLevel: z.string().nullish(),
   tags: z.array(z.string()).nullish(),
   examples: z.array(Example).nullish(),
+  group: z.string().nullish(),
+  subgroup: z.string().nullish(),
+  groupId: z.string().nullish(),
+  subgroupId: z.string().nullish(),
 });
 
 export const GrammarTopicPayload = z.object({
@@ -99,6 +103,12 @@ export const GrammarTopicPayload = z.object({
   rules: z.array(z.object({ rule: z.string(), examples: z.array(z.string()).nullish() })).nullish(),
   examples: z.array(z.object({ de: z.string(), ru: z.string(), highlight: z.string().nullish() })).nullish(),
   pitfalls: z.array(z.string()).nullish(),
+  // Browsable taxonomy routing (orthogonal to `category`); reuse via {g:id} from
+  // the Shared "Grammar groups" block only — see resolveGroupId(domain:'GRAMMAR').
+  group: z.string().nullish(),
+  subgroup: z.string().nullish(),
+  groupId: z.string().nullish(),
+  subgroupId: z.string().nullish(),
 });
 
 // The model emits these payloads as free-form JSON. It reliably uses sensible
@@ -224,6 +234,12 @@ export const ExerciseSetPayload = z.preprocess(
 export const ClassNotePayload = z.object({
   classNoteId: z.string().nullish(),
   structured: z.unknown(),
+  // Browsable taxonomy routing; reuse via {g:id} from the Shared "Note groups"
+  // block only — see resolveGroupId(domain:'NOTE').
+  group: z.string().nullish(),
+  subgroup: z.string().nullish(),
+  groupId: z.string().nullish(),
+  subgroupId: z.string().nullish(),
 });
 
 export const UnitPayload = z.object({

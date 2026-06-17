@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip: p.skip,
         take: p.take,
-        include: { _count: { select: { items: true } } },
+        // `include` already returns scalars (grammarTopicId, sourceType); add the
+        // linked topic title so the Exercises page can group by topic (§2.4).
+        include: { _count: { select: { items: true } }, grammarTopic: { select: { title: true } } },
       }),
       prisma.exerciseSet.count({ where }),
     ]);

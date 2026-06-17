@@ -27,25 +27,26 @@ model User {
   tier          String    @default("free") // rate-limit / budget tier
   locale        String    @default("ru")
 
-  accounts       Account[]
-  sessions       Session[]
-  learnerProfile LearnerProfile?
-  courses        Course[]
-  vocabEntries   VocabEntry[]
-  srsCards       SrsCard[]
-  grammarTopics  GrammarTopic[]
-  homeworks      Homework[]
-  classNotes     ClassNote[]
-  exerciseSets   ExerciseSet[]
-  chatThreads    ChatThread[]
-  proposals      Proposal[]
-  usageEvents    UsageEvent[]
-  abuseEvents    AbuseEvent[]
-  preferences    LearnerPreference[]
-  attempts       Attempt[]
-  homeworkErrors HomeworkError[]
-  timelineEvents TimelineEvent[]
-  grammarCards   GrammarCard[]
+  accounts         Account[]
+  sessions         Session[]
+  learnerProfile   LearnerProfile?
+  courses          Course[]
+  vocabEntries     VocabEntry[]
+  collectionGroups CollectionGroup[]
+  srsCards         SrsCard[]
+  grammarTopics    GrammarTopic[]
+  homeworks        Homework[]
+  classNotes       ClassNote[]
+  exerciseSets     ExerciseSet[]
+  chatThreads      ChatThread[]
+  proposals        Proposal[]
+  usageEvents      UsageEvent[]
+  abuseEvents      AbuseEvent[]
+  preferences      LearnerPreference[]
+  attempts         Attempt[]
+  homeworkErrors   HomeworkError[]
+  timelineEvents   TimelineEvent[]
+  grammarCards     GrammarCard[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -126,17 +127,17 @@ model Course {
 }
 
 model LearnerProfile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  nativeLang      String    @default("ru")
-  targetLang      String    @default("de")
-  cefrLevel       CefrLevel @default(A1)
-  formalityPref   Formality @default(BOTH)
-  goalsJson       Json? // ["pass Goethe B1", "work German"]
-  weakAreasJson   Json? // derived cache, rewritten by the nightly rollup (Slice 8) from logs+decay
-  explainInNative Boolean   @default(true)
-  dailyGoalCards  Int       @default(20)
-  desiredRetention Float    @default(0.9) // FSRS target recall (0.85–0.95)
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  nativeLang          String    @default("ru")
+  targetLang          String    @default("de")
+  cefrLevel           CefrLevel @default(A1)
+  formalityPref       Formality @default(BOTH)
+  goalsJson           Json? // ["pass Goethe B1", "work German"]
+  weakAreasJson       Json? // derived cache, rewritten by the nightly rollup (Slice 8) from logs+decay
+  explainInNative     Boolean   @default(true)
+  dailyGoalCards      Int       @default(20)
+  desiredRetention    Float     @default(0.9) // FSRS target recall (0.85–0.95)
   // Nightly rollup (Slice 8): freshness stamp + best-effort weekly note.
   weakAreasComputedAt DateTime?
   progressNoteRu      String?   @db.Text // weekly note in the learner's native language (field name is legacy)
@@ -224,6 +225,7 @@ model VocabEntry {
   id            String       @id @default(cuid())
   userId        String
   unitId        String?
+  groupId       String?
   lemma         String // "gehen", "Haus"
   pos           PartOfSpeech
   translationRu String
@@ -249,8 +251,9 @@ model VocabEntry {
   cefrLevel    CefrLevel?
   notes        String?    @db.Text
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit          Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit          Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  group         CollectionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   srsCards      SrsCard[] // one per ReviewDirection (minimum-information principle)
   exerciseItems ExerciseItem[]
 
@@ -259,6 +262,7 @@ model VocabEntry {
 
   @@unique([userId, lemma, pos])
   @@index([userId, unitId])
+  @@index([userId, groupId])
   @@index([userId, pos])
 }
 
@@ -272,6 +276,42 @@ model VocabUnitIndex {
 
   @@unique([vocabEntryId, unitId])
   @@index([unitId])
+}
+
+// Domain discriminator for the generic two-level taxonomy below. Existing
+// VocabGroup rows are folded in as VOCAB by the collection_grouping migration.
+enum GroupDomain {
+  VOCAB
+  GRAMMAR
+  NOTE
+}
+
+// Generic two-level taxonomy (group → subgroup) shared by vocab, grammar and notes.
+// Self-referencing; the 2-level invariant is enforced in code, not the DB. Shown to
+// the model in envelope layer 02 PER DOMAIN so it can create-or-reuse, not duplicate.
+model CollectionGroup {
+  id         String      @id @default(cuid())
+  userId     String
+  domain     GroupDomain // discriminator (VocabGroup rows backfill to VOCAB)
+  parentId   String? // null = top-level group; set = subgroup
+  name       String
+  nameNorm   String // normalized name for dedup (trim().toLowerCase())
+  emoji      String? // optional UI icon
+  color      String? // optional UI color (hex)
+  orderIndex Int         @default(0)
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent        CollectionGroup?  @relation("GroupTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children      CollectionGroup[] @relation("GroupTree")
+  vocabEntries  VocabEntry[]
+  grammarTopics GrammarTopic[]
+  classNotes    ClassNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, domain, parentId, nameNorm]) // domain ADDED to the vocab key
+  @@index([userId, domain, parentId])
 }
 
 // ───────────────────────── SRS (SM-2; FSRS-ready) ─────────────────────────
@@ -354,21 +394,23 @@ enum GrammarCategory {
 }
 
 model GrammarTopic {
-  id             String          @id @default(cuid())
-  userId         String
-  unitId         String?
-  title          String // "Perfekt mit haben/sein"
-  category       GrammarCategory
-  cefrLevel      CefrLevel?
-  explanationRu  String          @db.Text
-  examplesJson   Json? // [{ de, ru, highlight }]
-  rulesJson      Json? // structured rules / case tables
-  pitfallsJson   Json? // ["Bewegungsverben → sein"]
-  masteryScore   Float           @default(0) // 0..1, feeds envelope layer 02 (BKT p(L))
-  masteryUpdatedAt DateTime      @default(now()) // bumped ONLY by BKT — decay anchor (Phase 5)
+  id               String          @id @default(cuid())
+  userId           String
+  unitId           String?
+  groupId          String? // orthogonal browsable taxonomy (separate from `category`)
+  title            String // "Perfekt mit haben/sein"
+  category         GrammarCategory
+  cefrLevel        CefrLevel?
+  explanationRu    String          @db.Text
+  examplesJson     Json? // [{ de, ru, highlight }]
+  rulesJson        Json? // structured rules / case tables
+  pitfallsJson     Json? // ["Bewegungsverben → sein"]
+  masteryScore     Float           @default(0) // 0..1, feeds envelope layer 02 (BKT p(L))
+  masteryUpdatedAt DateTime        @default(now()) // bumped ONLY by BKT — decay anchor (Phase 5)
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit         Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  group        CollectionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   exerciseSets ExerciseSet[]
   card         GrammarCard?
 
@@ -377,6 +419,7 @@ model GrammarTopic {
 
   @@index([userId, category])
   @@index([userId, unitId])
+  @@index([userId, groupId])
 }
 
 // Spaced-repetition card for a grammar topic (Slice 6) — same FSRS engine as
@@ -419,22 +462,22 @@ enum HomeworkSource {
 }
 
 model Homework {
-  id              String         @id @default(cuid())
-  userId          String
-  courseId        String?
-  unitId          String?
-  title           String?
-  source          HomeworkSource @default(TEXT)
-  rawInput        String         @db.Text // verbatim learner text / OCR
-  imageUrl        String?
-  structuredJson  Json? // { tasks: [...], topics: [...] }
-  correctionsJson Json? // [{ original, corrected, errorType, explanationRu, case?, gender? }]
+  id               String         @id @default(cuid())
+  userId           String
+  courseId         String?
+  unitId           String?
+  title            String?
+  source           HomeworkSource @default(TEXT)
+  rawInput         String         @db.Text // verbatim learner text / OCR
+  imageUrl         String?
+  structuredJson   Json? // { tasks: [...], topics: [...] }
+  correctionsJson  Json? // [{ original, corrected, errorType, explanationRu, case?, gender? }]
   errorSummaryJson Json? // counts per error type
-  status          HomeworkStatus @default(DRAFT)
+  status           HomeworkStatus @default(DRAFT)
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course       Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  unit         Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
   exerciseSets ExerciseSet[]
   errors       HomeworkError[]
 
@@ -543,19 +586,22 @@ model ClassNote {
   userId         String
   courseId       String?
   unitId         String?
+  groupId        String? // browsable note taxonomy (shared CollectionGroup, domain NOTE)
   title          String?
   rawInput       String    @db.Text
   structuredJson Json? // extracted vocab / grammar / todos
   lessonDate     DateTime?
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  unit   Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  group  CollectionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, courseId])
+  @@index([userId, groupId])
 }
 
 // ───────────────────────── EXERCISES (AI-generated quizzes) ─────────────────────────
@@ -654,16 +700,16 @@ enum ChatRole {
 }
 
 model ChatThread {
-  id              String    @id @default(cuid())
-  userId          String
-  scopeType       ScopeType
-  scopeId         String? // null for GLOBAL
-  title           String?
-  threadSummary   String?   @db.Text
-  summaryWatermark Int      @default(0) // # turns summarized
+  id               String    @id @default(cuid())
+  userId           String
+  scopeType        ScopeType
+  scopeId          String? // null for GLOBAL
+  title            String?
+  threadSummary    String?   @db.Text
+  summaryWatermark Int       @default(0) // # turns summarized
 
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages ChatMessage[]
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
   proposals Proposal[]
 
   createdAt DateTime @default(now())
@@ -738,17 +784,17 @@ model Proposal {
 
 // ───────────────────────── AI INFRA (ported from ToonyGamy) ─────────────────────────
 model ProviderConfig {
-  id              String    @id @default(cuid())
-  slug            String    @unique // "gemini", "openai"
-  displayName     String
-  baseUrl         String?
-  apiKeyEncrypted String? // aes-256-gcm at rest
-  isEnabled       Boolean   @default(false)
+  id               String    @id @default(cuid())
+  slug             String    @unique // "gemini", "openai"
+  displayName      String
+  baseUrl          String?
+  apiKeyEncrypted  String? // aes-256-gcm at rest
+  isEnabled        Boolean   @default(false)
   capabilitiesJson Json? // { text, vision, imageGen }
-  healthStatus    String    @default("unknown") // up | down | unknown
-  healthCheckedAt DateTime?
-  priority        Int       @default(0)
-  configJson      Json?
+  healthStatus     String    @default("unknown") // up | down | unknown
+  healthCheckedAt  DateTime?
+  priority         Int       @default(0)
+  configJson       Json?
 
   models ModelConfig[]
 
@@ -773,14 +819,14 @@ model ModelConfig {
 }
 
 model FeatureFlag {
-  id            String  @id @default(cuid())
-  slug          String  @unique // "tutor_chat", "homework_correct", "exercise_generate", ...
-  name          String
-  category      String?
-  operationType String  @default("text_completion")
-  description   String?
+  id              String  @id @default(cuid())
+  slug            String  @unique // "tutor_chat", "homework_correct", "exercise_generate", ...
+  name            String
+  category        String?
+  operationType   String  @default("text_completion")
+  description     String?
   inputSchemaJson Json?
-  isActive      Boolean @default(true)
+  isActive        Boolean @default(true)
 
   routings  ModelRouting[]
   templates PromptTemplate[]
@@ -790,11 +836,11 @@ model FeatureFlag {
 }
 
 model ModelRouting {
-  id                String  @id @default(cuid())
-  featureId         String
-  modelId           String
-  priority          Int     @default(0) // DESC ordering
-  isEnabled         Boolean @default(true)
+  id                 String  @id @default(cuid())
+  featureId          String
+  modelId            String
+  priority           Int     @default(0) // DESC ordering
+  isEnabled          Boolean @default(true)
   configOverrideJson Json? // temperature, max_tokens, reasoningEffort
 
   feature FeatureFlag @relation(fields: [featureId], references: [id], onDelete: Cascade)
@@ -805,15 +851,15 @@ model ModelRouting {
 }
 
 model PromptTemplate {
-  id                 String   @id @default(cuid())
+  id                 String  @id @default(cuid())
   featureId          String
-  promptType         String   @default("default")
-  version            Int      @default(1)
-  systemPrompt       String   @db.Text
-  userPromptTemplate String   @db.Text // {{variable}} placeholders
+  promptType         String  @default("default")
+  version            Int     @default(1)
+  systemPrompt       String  @db.Text
+  userPromptTemplate String  @db.Text // {{variable}} placeholders
   variablesJson      Json?
   parametersJson     Json?
-  isActive           Boolean  @default(false)
+  isActive           Boolean @default(false)
   createdBy          String?
 
   feature FeatureFlag @relation(fields: [featureId], references: [id], onDelete: Cascade)
@@ -826,37 +872,37 @@ model PromptTemplate {
 }
 
 model PromptVariable {
-  id             String  @id @default(cuid())
-  key            String  @unique // "language", "level", "native_lang"
-  name           String
-  varType        String // string | number | enum
-  enumValuesJson Json?
+  id              String  @id @default(cuid())
+  key             String  @unique // "language", "level", "native_lang"
+  name            String
+  varType         String // string | number | enum
+  enumValuesJson  Json?
   validationRegex String?
-  defaultValue   String?
-  description    String?
-  isRequired     Boolean @default(false)
+  defaultValue    String?
+  description     String?
+  isRequired      Boolean @default(false)
 
   createdAt DateTime @default(now())
 }
 
 model UsageEvent {
-  id              String  @id @default(cuid())
-  userId          String?
-  requestId       String? // X-AI-Request-Id idempotency
-  featureSlug     String
-  operationType   String
-  providerSlug    String?
-  modelId         String?
-  inputTokens     Int     @default(0)
-  outputTokens    Int     @default(0)
-  cachedTokens    Int     @default(0)
-  thinkingTokens  Int     @default(0)
-  estimatedCostUsd Float  @default(0)
-  status          String  @default("ok") // ok | error
-  errorMessage    String?
-  latencyMs       Int?
-  isBackground    Boolean @default(false)
-  requestMetaJson Json?
+  id               String  @id @default(cuid())
+  userId           String?
+  requestId        String? // X-AI-Request-Id idempotency
+  featureSlug      String
+  operationType    String
+  providerSlug     String?
+  modelId          String?
+  inputTokens      Int     @default(0)
+  outputTokens     Int     @default(0)
+  cachedTokens     Int     @default(0)
+  thinkingTokens   Int     @default(0)
+  estimatedCostUsd Float   @default(0)
+  status           String  @default("ok") // ok | error
+  errorMessage     String?
+  latencyMs        Int?
+  isBackground     Boolean @default(false)
+  requestMetaJson  Json?
   responseMetaJson Json?
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -880,7 +926,7 @@ model RateLimit {
 }
 
 model AbuseEvent {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   userId         String?
   featureSlug    String?
   severity       String // "block" | "warn"

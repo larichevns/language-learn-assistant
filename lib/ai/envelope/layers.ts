@@ -62,6 +62,12 @@ export const SYSTEM_PERSONA = [
   '  tags; and 1–2 natural example sentences with Russian translation.',
   '- Pick the correct target_type AND attach it to the right place yourself (the current unit,',
   '  the relevant grammar topic). The learner should not have to say where it goes.',
+  '- GROUP every saved item into a broad `group` and a narrow `subgroup` of ITS OWN domain:',
+  '  a word → a Vocabulary group, a grammar topic → a Grammar group, a class note → a Note group.',
+  '  REUSE a group/subgroup shown in the matching Shared block ("Vocabulary groups" / "Grammar',
+  '  groups" / "Note groups") when it fits — pass its `{g:id}` as `groupId`/`subgroupId`. COPY the',
+  '  id ONLY from the block of the SAME domain (never paste a Vocabulary id into a grammar topic).',
+  '  Create a new group/subgroup ONLY when nothing fits. Broad theme = group, narrow facet = subgroup.',
   '- New words you add are AUTOMATICALLY queued for spaced-repetition review, so do',
   '  NOT emit a separate SRS_CARD proposal for a brand-new word. Use SRS_CARD only to',
   '  re-enroll an EXISTING word the learner explicitly names.',
@@ -93,7 +99,7 @@ export const FEATURE_ADDENDA: Record<string, string> = {
   vocab_extract:
     '## TASK\nExtract useful new German words from the provided text at the learner\'s level. Skip words they already know. Propose each as target_type "vocab_entry" with full German morphology (Artikel/Plural for nouns; Perfekt aux/Partizip II/separable prefix for verbs).',
   grammar_explain:
-    '## TASK\nExplain the grammar topic in Russian at the learner\'s CEFR level, with German examples. Highlight pitfalls for Russian speakers. If useful, offer to save it via target_type "grammar_topic".',
+    '## TASK\nExplain the grammar topic in the learner\'s native language at their CEFR level, with GERMAN examples (bold). Go DEEP and STRUCTURED:\n- A clear `explanationRu` that contrasts German with the learner\'s L1 (ru↔de) where they diverge.\n- 3–5 `rules`, each a concise statement WITH 1–2 German example sentences.\n- 3+ `examples` as {de, ru, highlight} (highlight = the focal token/ending).\n- 2–3 `pitfalls` specific to Russian speakers (missing articles, wrong Kasus, Perfekt haben/sein, verb-second order) — woven into the explanation AND listed.\nThen offer to save it via a `propose` call with target_type "grammar_topic" (fields explanationRu, rules, examples, pitfalls — and group/subgroup per the grouping rule).',
 };
 
 // ── Generic renderer (defensive; wraps scalars, bounded depth) ───────────────
@@ -129,6 +135,10 @@ function renderValue(value: unknown, typePrefix: string, depth = 0): string[] {
 }
 
 // ── Layer 02: shared knowledge ───────────────────────────────────────────────
+/** One group/subgroup node in a domain taxonomy. The {g:id} token (id, a cuid)
+ *  is the model's REUSE contract for `propose`; name is sanitize()d before render. */
+export type GNode = { id: string; name: string; parentId: string | null; count: number };
+
 export interface SharedInput {
   profile: {
     cefrLevel?: string;
@@ -138,9 +148,50 @@ export interface SharedInput {
     weakAreas?: string[];
     formalityPref?: string;
   };
-  vocab: Array<{ lemma: string; pos?: string; translationRu?: string; cefrLevel?: string; mastery?: number }>;
+  vocab: Array<{
+    lemma: string;
+    pos?: string;
+    translationRu?: string;
+    cefrLevel?: string;
+    mastery?: number;
+    groupPath?: string;
+  }>;
   // mastery as a stable decayed BUCKET (not a drifting %) so the cached layer is byte-stable
-  grammarTopics: Array<{ title: string; category?: string; bucket?: string }>;
+  grammarTopics: Array<{ title: string; category?: string; bucket?: string; groupPath?: string }>;
+  // current group→subgroup taxonomies PER DOMAIN; the {g:id} token is the reuse contract for `propose`
+  vocabGroups?: GNode[];
+  grammarGroups?: GNode[];
+  noteGroups?: GNode[];
+}
+
+/**
+ * Render a domain's group→subgroup taxonomy as a compact, capped block. Each top
+ * group (in the order given — caller sorts by orderIndex then name) is emitted with
+ * its children nested beneath it. Per-line shape: `${indent}- ${name} {g:${id}} (${count})`.
+ * The `{g:id}` token is the model's REUSE contract (id is a cuid → safe unwrapped;
+ * name is sanitize()d). `label` distinguishes the domain ("Vocabulary"|"Grammar"|"Note").
+ * Capped at `cap` (CAPS.GROUPS, per-domain) by dropping TRAILING tops (with their
+ * children) first; capText is the final byte-level safety net.
+ */
+function formatGroups(label: string, groups: GNode[] | undefined, cap: number): string {
+  if (!groups?.length) return '';
+  const tops = groups.filter((g) => g.parentId === null);
+  if (!tops.length) return '';
+  const childrenOf = (id: string) => groups.filter((g) => g.parentId === id);
+  const line = (indent: string, g: { id: string; name: string; count: number }) =>
+    `${indent}- ${sanitize(g.name)} {g:${g.id}} (${g.count})`;
+
+  const header = `## ${label} groups (reuse these — do NOT duplicate)`;
+  const out: string[] = [header];
+  let len = header.length;
+  for (const top of tops) {
+    const chunk = [line('', top), ...childrenOf(top.id).map((c) => line('  ', c))];
+    const chunkLen = chunk.reduce((n, l) => n + l.length + 1, 0); // +1 for the joining newline
+    if (out.length > 1 && len + chunkLen > cap) break; // drop trailing tops first
+    out.push(...chunk);
+    len += chunkLen;
+  }
+  return capText(out.join('\n'), cap);
 }
 
 export function formatShared(input: SharedInput): string {
@@ -154,26 +205,45 @@ export function formatShared(input: SharedInput): string {
   if (p.weakAreas?.length)
     lines.push(`- Weak areas: ${p.weakAreas.map((w) => wrapData('weak_area', w)).join(', ')}`);
 
+  // Vocabulary group taxonomy — shown BEFORE the vocab list so the model can
+  // create-or-reuse while reading words. The `{g:id}` token is the reuse contract
+  // (id is a cuid, safe unwrapped; name is sanitize()d). Each domain block is
+  // capped independently at CAPS.GROUPS; trailing tops drop first. Vocab renders
+  // first so it survives the final CAPS.SHARED backstop ahead of grammar/notes.
+  const vBlock = formatGroups('Vocabulary', input.vocabGroups, CAPS.GROUPS);
+  if (vBlock) lines.push(vBlock);
+
   if (input.vocab.length) {
     lines.push(`## Vocabulary mastery (${input.vocab.length} words known)`);
     const sample = input.vocab.slice(0, 40);
     for (const v of sample) {
       const lvl = v.cefrLevel ? ` [${sanitize(v.cefrLevel)}]` : '';
       const tr = v.translationRu ? ` — ${wrapData('vocab_ru', v.translationRu)}` : '';
-      lines.push(`- ${wrapData('lemma', v.lemma)}${lvl}${tr}`);
+      const grp = v.groupPath ? ` · ${sanitize(v.groupPath)}` : '';
+      lines.push(`- ${wrapData('lemma', v.lemma)}${lvl}${tr}${grp}`);
     }
     if (input.vocab.length > sample.length)
       lines.push(`- …(${input.vocab.length - sample.length} more)`);
   }
+
+  // Grammar group taxonomy — just before the mastery list (same reuse contract).
+  const gBlock = formatGroups('Grammar', input.grammarGroups, CAPS.GROUPS);
+  if (gBlock) lines.push(gBlock);
 
   if (input.grammarTopics.length) {
     lines.push('## Grammar mastery');
     for (const g of input.grammarTopics) {
       const m = g.bucket ? ` — ${sanitize(g.bucket)}` : '';
       const cat = g.category ? ` · ${sanitize(g.category)}` : '';
-      lines.push(`- ${wrapData('grammar_title', g.title)}${cat}${m}`);
+      const grp = g.groupPath ? ` · ${sanitize(g.groupPath)}` : '';
+      lines.push(`- ${wrapData('grammar_title', g.title)}${cat}${m}${grp}`);
     }
   }
+
+  // Note group taxonomy — after grammar (note bodies are never dumped, only the
+  // taxonomy, so the model can reuse note groups when proposing a CLASS_NOTE).
+  const nBlock = formatGroups('Note', input.noteGroups, CAPS.GROUPS);
+  if (nBlock) lines.push(nBlock);
 
   return capText(lines.join('\n'), CAPS.SHARED);
 }

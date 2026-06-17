@@ -41,6 +41,7 @@ export async function streamChat(
       signal,
     });
   } catch (e) {
+    if (signal?.aborted) return; // Stop pressed before the response arrived — graceful
     handlers.onError?.({ message: (e as Error).message });
     return;
   }
@@ -78,25 +79,31 @@ export async function streamChat(
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let nl: number;
-    while ((nl = buffer.indexOf('\n')) >= 0) {
-      const line = buffer.slice(0, nl).trimEnd();
-      buffer = buffer.slice(nl + 1);
-      if (line.startsWith('event:')) {
-        event = line.slice(6).trim();
-      } else if (line.startsWith('data:')) {
-        const raw = line.slice(5).trim();
-        try {
-          dispatch(event, raw ? JSON.parse(raw) : {});
-        } catch {
-          /* ignore malformed line */
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trimEnd();
+        buffer = buffer.slice(nl + 1);
+        if (line.startsWith('event:')) {
+          event = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          const raw = line.slice(5).trim();
+          try {
+            dispatch(event, raw ? JSON.parse(raw) : {});
+          } catch {
+            /* ignore malformed line */
+          }
+          event = '';
         }
-        event = '';
       }
     }
+  } catch (e) {
+    // Stop pressed mid-stream aborts the reader — keep the text streamed so far.
+    if (signal?.aborted) return;
+    handlers.onError?.({ message: (e as Error).message });
   }
 }

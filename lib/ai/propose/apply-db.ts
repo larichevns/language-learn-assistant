@@ -11,6 +11,7 @@ import {
   type Formality,
   type Gender,
   type GrammarCategory,
+  type GroupDomain,
   type GrammaticalCase,
   type PartOfSpeech,
   Prisma,
@@ -36,11 +37,79 @@ import {
 import { recordAttempt } from '../../learning/record-attempt';
 import { errorTypeToCategory, normalizeErrorType } from '../../learning/error-map';
 import { emitTimelineEvent } from '../../learning/timeline';
+import { normGroupName } from '../../api/collection-groups';
 
 type Tx = Prisma.TransactionClient;
 
 const json = (v: unknown): Prisma.InputJsonValue | undefined =>
   v == null ? undefined : (v as Prisma.InputJsonValue);
+
+const cleanStr = (s: unknown): string | null =>
+  typeof s === 'string' && s.trim() ? s.trim() : null;
+
+/**
+ * create-or-reuse for the two-level taxonomy (group → subgroup), parametrized by
+ * `domain` (VOCAB | GRAMMAR | NOTE). Runs INSIDE the Apply transaction,
+ * ownership-scoped by userId. Returns the LEAF groupId for the item: the resolved
+ * subgroup, else the top group, else null (ungrouped). Idempotent — name
+ * resolution is find-first on nameNorm, so a re-Apply matches the same rows (also
+ * backed by @@unique([userId, domain, parentId, nameNorm])).
+ *
+ * Rules:
+ * - Explicit groupId/subgroupId are honored only when they belong to the user,
+ *   are of the SAME `domain`, and satisfy the level invariant; otherwise they
+ *   fall through to name-based create. The `domain` in every `where` is what
+ *   rejects a CROSS-DOMAIN id leak (a vocab {g:id} pasted onto a grammar topic
+ *   won't match domain:'GRAMMAR' → falls to name-create/ungrouped).
+ * - A subgroup with NO resolved top group is DROPPED (item stays ungrouped) so
+ *   we never spawn a stray top-level group from a subgroup name.
+ */
+async function resolveGroupId(
+  tx: Tx,
+  userId: string,
+  domain: GroupDomain,
+  p: { group?: string | null; subgroup?: string | null; groupId?: string | null; subgroupId?: string | null },
+): Promise<string | null> {
+  // ── Top-level group ──
+  let topId: string | null = null;
+  if (cleanStr(p.groupId)) {
+    const g = await tx.collectionGroup.findFirst({
+      where: { id: p.groupId as string, userId, domain, parentId: null },
+      select: { id: true },
+    });
+    if (g) topId = g.id;
+  }
+  if (!topId && cleanStr(p.group)) {
+    const name = (p.group as string).trim();
+    const nameNorm = normGroupName(name);
+    const existing = await tx.collectionGroup.findFirst({
+      where: { userId, domain, parentId: null, nameNorm },
+      select: { id: true },
+    });
+    topId = existing?.id ?? (await tx.collectionGroup.create({ data: { userId, domain, parentId: null, name, nameNorm } })).id;
+  }
+
+  // ── Subgroup (leaf) — only within a resolved top group ──
+  let subId: string | null = null;
+  if (cleanStr(p.subgroupId)) {
+    const s = await tx.collectionGroup.findFirst({
+      where: { id: p.subgroupId as string, userId, domain },
+      select: { id: true, parentId: true },
+    });
+    if (s && topId && s.parentId === topId) subId = s.id;
+  }
+  if (!subId && cleanStr(p.subgroup) && topId) {
+    const name = (p.subgroup as string).trim();
+    const nameNorm = normGroupName(name);
+    const existing = await tx.collectionGroup.findFirst({
+      where: { userId, domain, parentId: topId, nameNorm },
+      select: { id: true },
+    });
+    subId = existing?.id ?? (await tx.collectionGroup.create({ data: { userId, domain, parentId: topId, name, nameNorm } })).id;
+  }
+
+  return subId ?? topId ?? null;
+}
 
 async function currentUnitId(tx: Tx, userId: string): Promise<string | null> {
   const u = await tx.unit.findFirst({ where: { course: { userId }, isCurrent: true }, select: { id: true } });
@@ -53,6 +122,9 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
     case 'VOCAB_ENTRY': {
       const v = VocabEntryPayload.parse(payload);
       const unitId = await currentUnitId(tx, userId);
+      // create-or-reuse the group/subgroup, then route the word to the leaf id
+      // on BOTH create and update so a re-add MOVES the word (last-write-wins).
+      const groupId = await resolveGroupId(tx, userId, 'VOCAB', v);
       const data = {
         translationRu: v.translationRu,
         gender: (v.gender ?? null) as Gender | null,
@@ -70,6 +142,7 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
         examplesJson: json(v.examples),
         tagsJson: json(v.tags),
         unitId,
+        groupId,
       };
       const row = await tx.vocabEntry.upsert({
         where: { userId_lemma_pos: { userId, lemma: v.lemma, pos: v.pos as PartOfSpeech } },
@@ -92,6 +165,9 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
     }
     case 'GRAMMAR_TOPIC': {
       const g = GrammarTopicPayload.parse(payload);
+      // create-or-reuse the GRAMMAR group/subgroup, then route the topic to the
+      // leaf id on BOTH create and update (last-write-wins move, like vocab).
+      const groupId = await resolveGroupId(tx, userId, 'GRAMMAR', g);
       const data = {
         title: g.title,
         category: g.category as GrammarCategory,
@@ -100,6 +176,7 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
         examplesJson: json(g.examples),
         rulesJson: json(g.rules),
         pitfallsJson: json(g.pitfalls),
+        groupId,
       };
       if (p.op === 'UPDATE' && p.targetId) {
         const res = await tx.grammarTopic.updateMany({ where: { id: p.targetId, userId }, data });
@@ -222,15 +299,21 @@ async function applyTarget(tx: Tx, p: Proposal, userId: string): Promise<string>
     }
     case 'CLASS_NOTE': {
       const c = ClassNotePayload.parse(payload);
+      // create-or-reuse the NOTE group/subgroup; route the note to the leaf id on
+      // both update and create (last-write-wins move, like vocab/grammar).
+      const groupId = await resolveGroupId(tx, userId, 'NOTE', c);
       const id = p.targetId ?? c.classNoteId;
       if (id) {
-        const res = await tx.classNote.updateMany({ where: { id, userId }, data: { structuredJson: json(c.structured) } });
+        const res = await tx.classNote.updateMany({
+          where: { id, userId },
+          data: { structuredJson: json(c.structured), groupId },
+        });
         if (!res.count) throw new ApiError('not_found', 'Class note not found', 404);
         return id;
       }
       const course = await tx.course.findFirst({ where: { userId, isActive: true }, select: { id: true } });
       const row = await tx.classNote.create({
-        data: { userId, courseId: course?.id ?? null, rawInput: '', structuredJson: json(c.structured) },
+        data: { userId, courseId: course?.id ?? null, rawInput: '', structuredJson: json(c.structured), groupId },
       });
       return row.id;
     }

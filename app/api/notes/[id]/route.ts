@@ -22,19 +22,39 @@ const PatchBody = z.object({
   lessonDate: z.string().datetime().nullish(),
 });
 
+// `groupId` is parsed separately so we can tell "absent" (leave unchanged) from
+// `null` (move to ungrouped). Same tri-state pattern as vocab/grammar [id].
+const MoveGroup = z.object({ groupId: z.string().nullable().optional() });
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser();
     const { id } = await params;
-    const parsed = PatchBody.safeParse(await req.json().catch(() => null));
+    const body = await req.json().catch(() => null);
+    const parsed = PatchBody.safeParse(body);
     if (!parsed.success) return handleApiError(new ApiError('invalid_input', 'Invalid update', 400));
     const d = parsed.data;
+
+    const move = MoveGroup.safeParse(body);
+    if (!move.success) return handleApiError(new ApiError('invalid_input', 'Invalid update', 400));
+    const groupIdProvided = move.data.groupId !== undefined;
+    const nextGroupId = move.data.groupId ?? null;
+    // Validate a non-null target group belongs to the user AND is a NOTE group.
+    if (groupIdProvided && nextGroupId !== null) {
+      const grp = await prisma.collectionGroup.findFirst({
+        where: { id: nextGroupId, userId: user.userId, domain: 'NOTE' },
+        select: { id: true },
+      });
+      if (!grp) throw new ApiError('invalid_input', 'Group not found', 422);
+    }
+
     const res = await prisma.classNote.updateMany({
       where: { id, userId: user.userId },
       data: {
         title: d.title ?? undefined,
         rawInput: d.rawInput ?? undefined,
         lessonDate: d.lessonDate ? new Date(d.lessonDate) : undefined,
+        groupId: groupIdProvided ? nextGroupId : undefined,
       },
     });
     if (!res.count) throw new ApiError('not_found', 'Note not found', 404);

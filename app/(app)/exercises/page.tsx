@@ -4,25 +4,52 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
-import { apiGet, apiPost } from '@/lib/api/client';
+import { useMemo, useState } from 'react';
 import { ProposalCard } from '@/components/assistant/proposal-card';
-import type { ChatProposal } from '@/lib/ai-client/chat-stream';
+import { useGroupCollapse } from '@/components/groups/use-collapse';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { apiGet, apiPost } from '@/lib/api/client';
+import type { ChatProposal } from '@/lib/ai-client/chat-stream';
 
 interface SetRow {
   id: string;
   title: string;
   status: string;
   score?: number | null;
+  grammarTopicId?: string | null;
+  grammarTopic?: { title: string } | null;
   _count?: { items: number };
 }
 interface GrammarRow {
   id: string;
   title: string;
+}
+
+// Sentinel bucket id for sets not linked to a grammar topic (manual/other).
+const OTHER_BUCKET = '__other__';
+
+function SetCard({ s, takeLabel, tasksLabel }: { s: SetRow; takeLabel: string; tasksLabel: string }) {
+  return (
+    <Link href={`/exercises/${s.id}`}>
+      <Card className="transition-colors hover:border-primary/40">
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{s.title}</p>
+            <p className="text-sm text-muted-foreground">{tasksLabel}</p>
+          </div>
+          {s.status === 'GRADED' && s.score != null ? (
+            <Badge variant="success">{Math.round(s.score * 100)}%</Badge>
+          ) : (
+            <Badge variant="muted">{takeLabel}</Badge>
+          )}
+        </CardContent>
+      </Card>
+    </Link>
+  );
 }
 
 export default function ExercisesPage() {
@@ -34,11 +61,32 @@ export default function ExercisesPage() {
   const [count, setCount] = useState(5);
   const [grammarTopicId, setGrammarTopicId] = useState('');
   const [proposals, setProposals] = useState<ChatProposal[]>([]);
+  const [open, setOpen] = useGroupCollapse('lla:exercises:open-buckets');
 
   const generate = useMutation({
     mutationFn: () => apiPost<{ proposals: ChatProposal[] }>('/api/exercises/generate', { count, grammarTopicId: grammarTopicId || undefined }),
     onSuccess: (res) => setProposals(res.proposals),
   });
+
+  // Derived buckets: group sets by their linked grammar topic, with a trailing
+  // "other" bucket for manual / topic-less sets. Presentation only — no CRUD.
+  const buckets = useMemo(() => {
+    const byId = new Map<string, { id: string; label: string; items: SetRow[] }>();
+    const other: SetRow[] = [];
+    for (const s of data?.items ?? []) {
+      if (s.grammarTopicId) {
+        const label = s.grammarTopic?.title ?? s.grammarTopicId;
+        const existing = byId.get(s.grammarTopicId);
+        if (existing) existing.items.push(s);
+        else byId.set(s.grammarTopicId, { id: s.grammarTopicId, label, items: [s] });
+      } else {
+        other.push(s);
+      }
+    }
+    const topicBuckets = [...byId.values()].sort((a, b) => a.label.localeCompare(b.label));
+    if (other.length > 0) topicBuckets.push({ id: OTHER_BUCKET, label: t('bucketOther'), items: other });
+    return topicBuckets;
+  }, [data, t]);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -74,27 +122,26 @@ export default function ExercisesPage() {
         <div className="flex justify-center py-10">
           <Spinner className="text-primary" />
         </div>
+      ) : buckets.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {data?.items.map((s) => (
-            <Link key={s.id} href={`/exercises/${s.id}`}>
-              <Card className="transition-colors hover:border-primary/40">
-                <CardContent className="flex items-center justify-between gap-3 p-4">
-                  <div>
-                    <p className="font-medium">{s.title}</p>
-                    <p className="text-sm text-muted-foreground">{t('tasks', { count: s._count?.items ?? 0 })}</p>
-                  </div>
-                  {s.status === 'GRADED' && s.score != null ? (
-                    <Badge variant="success">{Math.round(s.score * 100)}%</Badge>
-                  ) : (
-                    <Badge variant="muted">{t('take')}</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
+        <Accordion type="multiple" value={open} onValueChange={setOpen} className="flex flex-col gap-2">
+          {buckets.map((b) => (
+            <AccordionItem key={b.id} value={b.id} className="border-b-0">
+              <AccordionTrigger className="border-b border-border py-3 font-display text-base font-semibold no-underline hover:no-underline">
+                <span className="flex items-baseline gap-2">
+                  {b.label}
+                  <span className="text-sm font-normal text-muted-foreground">{b.items.length}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-2 pb-4 pt-3">
+                {b.items.map((s) => (
+                  <SetCard key={s.id} s={s} takeLabel={t('take')} tasksLabel={t('tasks', { count: s._count?.items ?? 0 })} />
+                ))}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-          {data && data.items.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>}
-        </div>
+        </Accordion>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ date: 2026-06-13
 ---
 
 # Dependency Graph
+<!-- Updated: 2026-06-17 | collection-grouping: components/groups/*, app/api/groups/**, lib/api/collection-groups; removed vocab-groups + app/api/vocabulary/groups -->
 
 Coarse module dependencies (arrows = "depends on / imports").
 
@@ -21,6 +22,15 @@ app/api/{exercises/[id]/grade, vocabulary/review, grammar/review} ─→ lib/lea
 lib/ai/propose/apply-db ─→ lib/learning (homework errors→recordAttempt · timeline) + auto-enroll SrsCard/GrammarCard
 app/(app)/progress ─→ app/api/progress/{stats,timeline} ─→ lib/learning/metrics (all derived from Review/Attempt/SrsCard logs)
 app/api/crons/rollup ─→ lib/learning/rollup ─→ {metrics, decay, error-map, timeline} + lib/ai/orchestrator (background weekly note, never billed)
+
+# Collection grouping (2026-06-17 — generalizes vocab-grouping to all domains):
+app/(app)/{vocabulary,grammar,notes} ─→ components/groups/* (GroupedAccordion · use-collapse · group-dialogs · types) ─→ app/api/groups/** (GET/POST · [id] PATCH/DELETE) ─→ lib/api/collection-groups (DTOs + domain maps + normGroupName) ─→ lib/db
+components/{grammar/grammar-topic-card, notes/note-card} ─→ components/groups/types          # leaf render-props for the generic accordion
+lib/ai/propose/apply-db ─→ resolveGroupId(tx,userId,domain,p) ─→ lib/api/collection-groups (normGroupName) + lib/db (CollectionGroup, domain-scoped create-or-reuse)
+lib/ai/envelope/{from-db,layers,caps} ─→ per-domain group block (## Vocabulary/Grammar/Note groups, {g:id}, CAPS.GROUPS)
+app/(app)/{homework,exercises} ─→ DERIVED presentational buckets (status / linked grammarTopic) — NO groups API, NO CollectionGroup rows
+# REMOVED in this change: lib/api/vocab-groups (→ collection-groups) · app/api/vocabulary/groups/** (→ /api/groups?domain=VOCAB) · components/vocabulary/{group-section,group-dialogs,use-vocab-collapse,types,group-actions} (→ components/groups/*).
+# See [[Одна-CollectionGroup-с-доменом-VOCAB-GRAMMAR-NOTE-VocabGroup-свёрнута-rename-миграцией]] · [[groups]] · [[collection-grouping]].
 
 # PWA offline:
 public/sw.js (caches reads) ‖ app/(app)/{vocabulary,grammar}/review ─→ lib/offline/outbox (postOrQueue) ─→ IndexedDB; components/offline-sync (flush on reconnect) mounted in app/(app)/layout. See [[PWA-офлайн-SW-кэширует-чтения-IndexedDB-outbox-копит-записи]].

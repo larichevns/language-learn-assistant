@@ -4,13 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ImageIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { apiGet, apiPost } from '@/lib/api/client';
+import { useGroupCollapse } from '@/components/groups/use-collapse';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Textarea } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { apiGet, apiPost } from '@/lib/api/client';
 
 interface HwRow {
   id: string;
@@ -28,6 +30,31 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: 'архив',
 };
 
+// Derived buckets: homework has no group taxonomy, so we present it grouped by
+// its `status` lifecycle. Presentation only — no move, no CRUD, no AI.
+const BUCKETS: Array<{ key: string; labelKey: string; statuses: string[] }> = [
+  { key: 'review', labelKey: 'bucketReview', statuses: ['SUBMITTED', 'STRUCTURED'] },
+  { key: 'corrected', labelKey: 'bucketCorrected', statuses: ['CORRECTED'] },
+  { key: 'drafts', labelKey: 'bucketDrafts', statuses: ['DRAFT'] },
+  { key: 'archive', labelKey: 'bucketArchive', statuses: ['ARCHIVED'] },
+];
+
+function HwCard({ hw }: { hw: HwRow }) {
+  return (
+    <Link href={`/homework/${hw.id}`}>
+      <Card className="transition-colors hover:border-primary/40">
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{hw.title ?? 'Без названия'}</p>
+            <p className="truncate text-sm text-muted-foreground">{hw.rawInput.slice(0, 80)}</p>
+          </div>
+          <Badge variant={hw.status === 'CORRECTED' ? 'success' : 'muted'}>{STATUS_LABEL[hw.status] ?? hw.status}</Badge>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
 export default function HomeworkPage() {
   const t = useTranslations('homework');
   const tc = useTranslations('common');
@@ -38,6 +65,7 @@ export default function HomeworkPage() {
   const [title, setTitle] = useState('');
   const [rawInput, setRawInput] = useState('');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [open, setOpen] = useGroupCollapse('lla:homework:open-buckets');
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -62,6 +90,14 @@ export default function HomeworkPage() {
   });
 
   const canSubmit = Boolean(rawInput.trim()) || Boolean(imageDataUrl);
+
+  // Bucket the rows by status; keep only the non-empty buckets.
+  const buckets = useMemo(() => {
+    const items = data?.items ?? [];
+    return BUCKETS.map((b) => ({ ...b, items: items.filter((hw) => b.statuses.includes(hw.status)) })).filter(
+      (b) => b.items.length > 0,
+    );
+  }, [data]);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -103,25 +139,26 @@ export default function HomeworkPage() {
         <div className="flex justify-center py-10">
           <Spinner className="text-primary" />
         </div>
+      ) : buckets.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {data?.items.map((hw) => (
-            <Link key={hw.id} href={`/homework/${hw.id}`}>
-              <Card className="transition-colors hover:border-primary/40">
-                <CardContent className="flex items-center justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{hw.title ?? 'Без названия'}</p>
-                    <p className="truncate text-sm text-muted-foreground">{hw.rawInput.slice(0, 80)}</p>
-                  </div>
-                  <Badge variant={hw.status === 'CORRECTED' ? 'success' : 'muted'}>{STATUS_LABEL[hw.status] ?? hw.status}</Badge>
-                </CardContent>
-              </Card>
-            </Link>
+        <Accordion type="multiple" value={open} onValueChange={setOpen} className="flex flex-col gap-2">
+          {buckets.map((b) => (
+            <AccordionItem key={b.key} value={b.key} className="border-b-0">
+              <AccordionTrigger className="border-b border-border py-3 font-display text-base font-semibold no-underline hover:no-underline">
+                <span className="flex items-baseline gap-2">
+                  {t(b.labelKey)}
+                  <span className="text-sm font-normal text-muted-foreground">{b.items.length}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-2 pb-4 pt-3">
+                {b.items.map((hw) => (
+                  <HwCard key={hw.id} hw={hw} />
+                ))}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-          {data && data.items.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>
-          )}
-        </div>
+        </Accordion>
       )}
     </div>
   );

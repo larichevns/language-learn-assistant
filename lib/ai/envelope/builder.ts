@@ -43,8 +43,16 @@ export function buildEnvelope(data: EnvelopeData): BuiltEnvelope {
   const block1 = present(data.focus, data.scope, data.threadSummary);
   if (block1) messages.push({ role: 'user', content: block1 });
 
-  for (const m of data.history) {
-    if (m.content.trim()) messages.push({ role: m.role, content: m.content });
+  // History fed before the live user message must end on a model turn. A dangling
+  // user turn — a prior message whose assistant reply never persisted (aborted
+  // stream, timeout, or an empty/proposal-only response) — would otherwise coalesce
+  // with the new user message at the provider, and the model would answer the stale
+  // question first. Drop empty turns, then trim any trailing user turn(s).
+  const history = data.history.filter((m) => m.content.trim());
+  let end = history.length;
+  while (end > 0 && history[end - 1]?.role === 'user') end--;
+  for (const m of history.slice(0, end)) {
+    messages.push({ role: m.role, content: m.content });
   }
 
   messages.push({ role: 'user', content: data.userMessage });

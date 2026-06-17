@@ -16,9 +16,12 @@ export async function GET(req: NextRequest) {
     const p = parsePagination(url);
     const pos = url.searchParams.get('pos');
     const q = url.searchParams.get('q');
+    const ungrouped = url.searchParams.get('ungrouped') === 'true';
+    const groupId = url.searchParams.get('groupId');
 
     const where: Prisma.VocabEntryWhereInput = {
       userId: user.userId,
+      ...(ungrouped ? { groupId: null } : groupId ? { groupId } : {}),
       ...(pos ? { pos: pos as PartOfSpeech } : {}),
       ...(q
         ? {

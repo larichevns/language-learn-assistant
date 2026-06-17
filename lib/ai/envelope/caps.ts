@@ -9,6 +9,7 @@ export const CAPS = {
   TURN: 2000,
   SHARED: 3000,
   FOCUS: 2000,
+  GROUPS: 900, // per-domain group block cap (×3 fits under SHARED 3000); was VOCAB_GROUPS: 1200
 } as const;
 
 /** Last N verbatim turns kept in the envelope. */
