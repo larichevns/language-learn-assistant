@@ -26,6 +26,7 @@ const CreateBody = z.object({
   title: z.string().max(200).optional(),
   rawInput: z.string().min(1).max(20_000),
   lessonDate: z.string().datetime().optional(),
+  entryDate: z.string().datetime().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
         title: d.title,
         rawInput: d.rawInput,
         lessonDate: d.lessonDate ? new Date(d.lessonDate) : null,
+        entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
       },
     });
     return successResponse(row, 201);

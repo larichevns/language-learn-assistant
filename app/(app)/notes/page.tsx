@@ -12,7 +12,10 @@ import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { NoteCard, type NoteRow } from '@/components/notes/note-card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/feedback';
+import { SearchInput } from '@/components/ui/search-input';
+import { SortToggle } from '@/components/ui/sort-toggle';
 import { Composer } from '@/components/writing/composer';
+import { EntryDateInput } from '@/components/writing/entry-date-input';
 import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api/client';
 import type { CreateGroupDto, GroupNode, GroupTree } from '@/lib/api/collection-groups';
 
@@ -28,6 +31,9 @@ export default function NotesPage() {
 
   const [title, setTitle] = useState('');
   const [rawInput, setRawInput] = useState('');
+  const [entryDate, setEntryDate] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [sortMode, setSortMode] = useState<'recent' | 'entryDate'>('recent');
   const [open, setOpen] = useGroupCollapse('lla:notes:open-groups');
   const [formMode, setFormMode] = useState<GroupFormMode | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -41,8 +47,14 @@ export default function NotesPage() {
   const onMutationError = (e: unknown) => setFormError(e instanceof ApiClientError ? e.message : tg('genericError'));
 
   const create = useMutation({
-    mutationFn: () => apiPost<{ id: string }>('/api/notes', { title: title || undefined, rawInput }),
+    mutationFn: () =>
+      apiPost<{ id: string }>('/api/notes', {
+        title: title || undefined,
+        rawInput,
+        ...(entryDate ? { entryDate } : {}),
+      }),
     onSuccess: (n) => {
+      setEntryDate(null);
       void qc.invalidateQueries({ queryKey: ['notes'] });
       router.push(`/notes/${n.id}`);
     },
@@ -88,14 +100,26 @@ export default function NotesPage() {
 
   const groups = tree.data?.groups ?? [];
   const options = useMemo(() => flattenGroupOptions(groups), [groups]);
+  const filteredNotes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const items = notes.data?.items ?? [];
+    if (!q) return items;
+    return items.filter(
+      (n) => (n.title ?? '').toLowerCase().includes(q) || n.rawInput.toLowerCase().includes(q),
+    );
+  }, [notes.data, search]);
+  const sortedNotes = useMemo(() => {
+    if (sortMode === 'recent') return filteredNotes;
+    return [...filteredNotes].sort((a, b) => Date.parse(b.entryDate) - Date.parse(a.entryDate));
+  }, [filteredNotes, sortMode]);
   const notesByGroup = useMemo(() => {
     const map = new Map<string, NoteRow[]>();
-    for (const n of notes.data?.items ?? []) {
+    for (const n of sortedNotes) {
       if (n.groupId) map.set(n.groupId, [...(map.get(n.groupId) ?? []), n]);
     }
     return map;
-  }, [notes.data]);
-  const ungrouped = useMemo(() => (notes.data?.items ?? []).filter((n) => !n.groupId), [notes.data]);
+  }, [sortedNotes]);
+  const ungrouped = useMemo(() => sortedNotes.filter((n) => !n.groupId), [sortedNotes]);
 
   const actions = {
     onAddSubgroup: (parent: GroupNode) => {
@@ -159,6 +183,7 @@ export default function NotesPage() {
           value={rawInput}
           onChange={setRawInput}
           placeholder={t('textPlaceholder')}
+          footerLeft={<EntryDateInput value={entryDate} onChange={setEntryDate} label={tc('entryDate')} />}
           onSubmit={() => create.mutate()}
           submitLabel={tc('save')}
           submitting={create.isPending}
@@ -168,6 +193,15 @@ export default function NotesPage() {
 
       {loadError && <p className="mb-4 text-sm text-destructive">{tg('loadError')}</p>}
       {moveError && <p className="mb-4 text-sm text-destructive">{moveError}</p>}
+
+      {totalCount > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex-1">
+            <SearchInput value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} clearLabel={tc('clearSearch')} />
+          </div>
+          <SortToggle mode={sortMode} onChange={setSortMode} recentLabel={tc('sortRecent')} dateLabel={tc('sortByDate')} />
+        </div>
+      )}
 
       {hasGroups && (
         <div className="mb-3 flex justify-end">

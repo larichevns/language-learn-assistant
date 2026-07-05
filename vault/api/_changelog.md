@@ -7,6 +7,25 @@ date: 2026-06-13
 
 All routes follow the `{ code, message, data }` envelope. Auth via Auth.js v5 session; mutations are owner-checked; admin routes require `role=ADMIN`. SSE for streaming chat.
 
+## [Unreleased] — entryDate, per-tab search, markdown notes (2026-07-05)
+<!-- Updated: 2026-07-05 | entryDate + notes-as-markdown-notebook + per-tab search -->
+
+### Items — user-editable `entryDate` + narrow metadata PATCH
+`ClassNote`/`Homework`/`ExerciseSet` gained a user-owned `entryDate` (default `now()`), distinct from `createdAt`; `ClassNote.lessonDate` untouched. Schema + backfill: [[database]] · decision: [[entryDate-это-пользовательская-дата-записи-отдельная-от-createdAt-сортировка-на-клиенте]].
+- **Extended** `POST /api/notes` + `PATCH /api/notes/[id]` — accept `entryDate` (ISO). `PATCH` is still the partial editor (title/rawInput/lessonDate/groupId).
+- **Extended** `POST /api/homework` — accepts `entryDate` (also used by the note→homework promote copy, below).
+- **New** `PATCH /api/homework/[id]` — body `{ title?, entryDate? }` **only**; the correction lifecycle (`status`/`rawInput`/`structuredJson`) stays sealed from this generic editor. `400` bad body, `404` foreign/missing.
+- **New** `PATCH /api/exercises/[id]` — body `{ entryDate? }` only (date, no lifecycle). `400`, `404`.
+- **Fix** `PATCH /api/notes/[id]` — an explicit `title: null` now **clears** the title (tri-state absent/null/value: `d.title === undefined ? undefined : d.title`); previously a null was silently ignored.
+- **No** server `orderBy` change and **no** envelope change: list sort by `entryDate` is client-side (`SortToggle`); `lib/ai/envelope/from-db.ts` still orders by `updatedAt`.
+
+### Notes — markdown notebook + promote-to-homework (no new endpoint)
+- `app/(app)/notes/[id]` is now read/edit: read renders markdown (`react-markdown` + `remark-gfm`, **no `rehype-raw`** = raw HTML stays inert), edit mounts `Composer` → `PATCH /api/notes/[id]`. Decision: [[react-markdown-без-rehype-raw-это-санитайзер-заметок-редактор-остаётся-textarea]].
+- **"Send to homework"** = `POST /api/homework` copying the note's `title`/`rawInput`/`entryDate` into a `SUBMITTED` Homework (the note stays; AI correction is triggered manually afterwards).
+
+### Lists — client-side per-tab search (no API/DB change)
+- All 5 list pages (vocab/grammar/notes/homework/exercises) filter the loaded page (≤100 items, React Query in-memory) via the reusable `SearchInput`; the server `?q=` on vocab/grammar GET stays intentionally unused for uniformity. Pattern: [[клиентский-поиск-по-вкладке-SearchInput-фильтр-до-группировки]].
+
 ## [Unreleased] — Collection grouping (2026-06-17)
 <!-- Updated: 2026-06-17 | collection-grouping feature -->
 Группировка обобщена со словаря на **грамматику и заметки**: `VocabGroup` свёрнута в доменную `CollectionGroup` (`domain` VOCAB|GRAMMAR|NOTE). Спека: [[collection-grouping]] · модуль API: [[groups]] · решение: [[Одна-CollectionGroup-с-доменом-VOCAB-GRAMMAR-NOTE-VocabGroup-свёрнута-rename-миграцией]].

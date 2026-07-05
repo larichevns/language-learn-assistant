@@ -20,6 +20,7 @@ const PatchBody = z.object({
   title: z.string().max(200).nullish(),
   rawInput: z.string().min(1).max(20_000).optional(),
   lessonDate: z.string().datetime().nullish(),
+  entryDate: z.string().datetime().optional(),
 });
 
 // `groupId` is parsed separately so we can tell "absent" (leave unchanged) from
@@ -51,9 +52,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const res = await prisma.classNote.updateMany({
       where: { id, userId: user.userId },
       data: {
-        title: d.title ?? undefined,
+        title: d.title === undefined ? undefined : d.title,
         rawInput: d.rawInput ?? undefined,
         lessonDate: d.lessonDate ? new Date(d.lessonDate) : undefined,
+        entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
         groupId: groupIdProvided ? nextGroupId : undefined,
       },
     });

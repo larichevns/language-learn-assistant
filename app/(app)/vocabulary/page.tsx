@@ -11,6 +11,7 @@ import { flattenGroupOptions, type GroupLabels, totalItems } from '@/components/
 import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/feedback';
+import { SearchInput } from '@/components/ui/search-input';
 import { AddWordForm } from '@/components/vocabulary/add-word-form';
 import type { VocabListResponse, VocabRow } from '@/components/vocabulary/types';
 import { WordCard } from '@/components/vocabulary/word-card';
@@ -27,6 +28,7 @@ export default function VocabularyPage() {
   const words = useQuery({ queryKey: ['vocab'], queryFn: () => apiGet<VocabListResponse>('/api/vocabulary?pageSize=200') });
   const tree = useQuery({ queryKey: ['vocab-groups'], queryFn: () => apiGet<GroupTree>('/api/groups?domain=VOCAB') });
 
+  const [search, setSearch] = useState('');
   const [open, setOpen] = useGroupCollapse('lla:vocab:open-groups');
   const [formMode, setFormMode] = useState<GroupFormMode | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -79,14 +81,20 @@ export default function VocabularyPage() {
 
   const groups = tree.data?.groups ?? [];
   const options = useMemo(() => flattenGroupOptions(groups), [groups]);
+  const filteredWords = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const items = words.data?.items ?? [];
+    if (!q) return items;
+    return items.filter((w) => w.lemma.toLowerCase().includes(q) || w.translationRu.toLowerCase().includes(q));
+  }, [words.data, search]);
   const wordsByGroup = useMemo(() => {
     const map = new Map<string, VocabRow[]>();
-    for (const w of words.data?.items ?? []) {
+    for (const w of filteredWords) {
       if (w.groupId) map.set(w.groupId, [...(map.get(w.groupId) ?? []), w]);
     }
     return map;
-  }, [words.data]);
-  const ungrouped = useMemo(() => (words.data?.items ?? []).filter((w) => !w.groupId), [words.data]);
+  }, [filteredWords]);
+  const ungrouped = useMemo(() => filteredWords.filter((w) => !w.groupId), [filteredWords]);
 
   const actions = {
     onAddSubgroup: (parent: GroupNode) => {
@@ -154,6 +162,12 @@ export default function VocabularyPage() {
 
       {loadError && <p className="mb-4 text-sm text-destructive">{tg('loadError')}</p>}
       {moveError && <p className="mb-4 text-sm text-destructive">{moveError}</p>}
+
+      {totalCount > 0 && (
+        <div className="mb-4">
+          <SearchInput value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} clearLabel={tc('clearSearch')} />
+        </div>
+      )}
 
       {hasGroups && (
         <div className="mb-3 flex justify-end">

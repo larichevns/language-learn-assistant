@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ImageIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -10,7 +10,10 @@ import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { SearchInput } from '@/components/ui/search-input';
+import { SortToggle } from '@/components/ui/sort-toggle';
 import { Composer } from '@/components/writing/composer';
+import { EntryDateInput } from '@/components/writing/entry-date-input';
 import { apiGet, apiPost } from '@/lib/api/client';
 
 interface HwRow {
@@ -18,6 +21,7 @@ interface HwRow {
   title?: string | null;
   rawInput: string;
   status: string;
+  entryDate: string;
   createdAt: string;
 }
 
@@ -39,12 +43,16 @@ const BUCKETS: Array<{ key: string; labelKey: string; statuses: string[] }> = [
 ];
 
 function HwCard({ hw }: { hw: HwRow }) {
+  const format = useFormatter();
   return (
     <Link href={`/homework/${hw.id}`}>
       <Card className="transition-colors hover:border-primary/40">
         <CardContent className="flex items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <p className="truncate font-medium">{hw.title ?? 'Без названия'}</p>
+            <p className="text-xs text-muted-foreground">
+              {format.dateTime(new Date(hw.entryDate), { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
             <p className="truncate text-sm text-muted-foreground">{hw.rawInput.slice(0, 80)}</p>
           </div>
           <Badge variant={hw.status === 'CORRECTED' ? 'success' : 'muted'}>{STATUS_LABEL[hw.status] ?? hw.status}</Badge>
@@ -64,6 +72,9 @@ export default function HomeworkPage() {
   const [title, setTitle] = useState('');
   const [rawInput, setRawInput] = useState('');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [draftEntryDate, setDraftEntryDate] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [sortMode, setSortMode] = useState<'recent' | 'entryDate'>('recent');
   const [open, setOpen] = useGroupCollapse('lla:homework:open-buckets');
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -76,13 +87,13 @@ export default function HomeworkPage() {
 
   const create = useMutation({
     mutationFn: () =>
-      apiPost<{ id: string }>(
-        '/api/homework',
-        imageDataUrl
-          ? { title: title || undefined, imageUrl: imageDataUrl, source: 'IMAGE' }
-          : { title: title || undefined, rawInput },
-      ),
+      apiPost<{ id: string }>('/api/homework', {
+        title: title || undefined,
+        ...(imageDataUrl ? { imageUrl: imageDataUrl, source: 'IMAGE' } : { rawInput }),
+        ...(draftEntryDate ? { entryDate: draftEntryDate } : {}),
+      }),
     onSuccess: (hw) => {
+      setDraftEntryDate(null);
       void qc.invalidateQueries({ queryKey: ['homework'] });
       router.push(`/homework/${hw.id}`);
     },
@@ -90,13 +101,26 @@ export default function HomeworkPage() {
 
   const canSubmit = Boolean(rawInput.trim()) || Boolean(imageDataUrl);
 
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const items = data?.items ?? [];
+    if (!q) return items;
+    return items.filter(
+      (hw) => (hw.title ?? '').toLowerCase().includes(q) || hw.rawInput.toLowerCase().includes(q),
+    );
+  }, [data, search]);
+
+  const sortedItems = useMemo(() => {
+    if (sortMode === 'recent') return filteredItems;
+    return [...filteredItems].sort((a, b) => Date.parse(b.entryDate) - Date.parse(a.entryDate));
+  }, [filteredItems, sortMode]);
+
   // Bucket the rows by status; keep only the non-empty buckets.
   const buckets = useMemo(() => {
-    const items = data?.items ?? [];
-    return BUCKETS.map((b) => ({ ...b, items: items.filter((hw) => b.statuses.includes(hw.status)) })).filter(
+    return BUCKETS.map((b) => ({ ...b, items: sortedItems.filter((hw) => b.statuses.includes(hw.status)) })).filter(
       (b) => b.items.length > 0,
     );
-  }, [data]);
+  }, [sortedItems]);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -131,6 +155,7 @@ export default function HomeworkPage() {
                   {tc('remove')}
                 </button>
               )}
+              <EntryDateInput value={draftEntryDate} onChange={setDraftEntryDate} label={tc('entryDate')} />
             </div>
           }
         >
@@ -140,6 +165,20 @@ export default function HomeworkPage() {
           )}
         </Composer>
       </div>
+
+      {(data?.items?.length ?? 0) > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex-1">
+            <SearchInput value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} clearLabel={tc('clearSearch')} />
+          </div>
+          <SortToggle
+            mode={sortMode}
+            onChange={setSortMode}
+            recentLabel={tc('sortRecent')}
+            dateLabel={tc('sortByDate')}
+          />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-10">

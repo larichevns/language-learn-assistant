@@ -44,12 +44,12 @@ export function WordCard({
           {word.cefrLevel && <Badge variant="muted">{word.cefrLevel}</Badge>}
         </div>
         <span className="text-sm text-muted-foreground">{word.translationRu}</span>
-        <div className="mt-1 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {word.pluralForm && <Badge variant="deutsch">pl. {word.pluralForm}</Badge>}
             {dueNow && <Badge variant="default">{t('dueBadge')}</Badge>}
           </div>
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="ml-auto flex min-w-0 items-center gap-1.5">
             {moving && <Spinner className="text-muted-foreground" />}
             <Select
               value={word.groupId ?? UNGROUPED_VALUE}
@@ -58,7 +58,7 @@ export function WordCard({
             >
               <SelectTrigger
                 aria-label={tg('moveTo')}
-                className="h-8 w-auto gap-1.5 rounded-lg border-border px-2.5 text-xs text-muted-foreground"
+                className="h-8 w-full min-w-0 max-w-[11rem] gap-1.5 rounded-lg border-border px-2.5 text-xs text-muted-foreground"
               >
                 <SelectValue placeholder={tg('moveTo')} />
               </SelectTrigger>

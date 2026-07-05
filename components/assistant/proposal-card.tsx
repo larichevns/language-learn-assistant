@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiPost } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/feedback';
@@ -25,10 +25,13 @@ export function ProposalCard({
   proposal,
   onResolved,
   onRefine,
+  applySignal,
 }: {
   proposal: ChatProposal;
   onResolved?: () => void;
   onRefine?: (proposal: ChatProposal) => void;
+  /** Bumped by a parent "Apply all" control; applies this card if still pending. */
+  applySignal?: number;
 }) {
   const t = useTranslations('proposal');
   const tc = useTranslations('common');
@@ -58,6 +61,19 @@ export function ProposalCard({
       setBusy(null);
     }
   }
+
+  // "Apply all" (dock batches a word list): when the parent bumps applySignal,
+  // apply this card if it is still pending. Refs read the latest status without
+  // widening the dep array — onResolved is an inline closure, so depending on it
+  // would re-fire the effect and double-apply.
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
+  useEffect(() => {
+    if (applySignal && statusRef.current === 'PENDING' && busyRef.current === null) void act('apply');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applySignal]);
 
   const resolved = status !== 'PENDING';
 

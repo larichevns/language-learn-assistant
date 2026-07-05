@@ -98,6 +98,14 @@ const config: Config = {
   					transform: 'translateY(0)'
   				}
   			},
+  			'slide-in-left': {
+  				from: {
+  					transform: 'translateX(-100%)'
+  				},
+  				to: {
+  					transform: 'translateX(0)'
+  				}
+  			},
   			'pulse-soft': {
   				'0%, 100%': {
   					opacity: '1'
@@ -125,6 +133,7 @@ const config: Config = {
   		},
   		animation: {
   			'fade-in': 'fade-in 0.18s ease-out',
+  			'slide-in-left': 'slide-in-left 0.2s ease-out',
   			'pulse-soft': 'pulse-soft 1.4s ease-in-out infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'

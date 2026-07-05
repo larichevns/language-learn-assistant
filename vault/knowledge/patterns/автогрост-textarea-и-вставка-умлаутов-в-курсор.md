@@ -34,12 +34,21 @@ date: 2026-06-17
 **по фокусу** (у vocab — только когда ответ немецкий, `view.answerDe`). i18n счётчика —
 `common.words/chars` (ICU plural), aria — `common.insertChar`.
 
-## Сознательно НЕ тронуто
+## Assistant-док: свой автогрост, не `Composer`
 
+<!-- Updated: 2026-06-27 | док-композер: <input> → автогрост-<textarea>, Enter — отправка, Shift+Enter — перенос -->
 **Assistant-док** (`components/assistant/assistant-dock.tsx`) — отдельно спроектированный
-hero-композер (pill→bar→window, Enter-to-send). Не оборачивали в `Composer` и не вешали
-панель умлаутов, чтобы не сломать его поведение/анимации. Идея «умлауты в ассистенте» — в
-[[post-mvp-backlog]].
+hero-композер (pill→bar→window). Раньше это был однострочный `<input>` (Enter — отправка,
+переноса строки не было вовсе). Теперь это автогрост-`<textarea rows={1}>`: **Enter —
+отправить, Shift+Enter — перенос строки** (`onKeyDown` уже проверял `!e.shiftKey`; textarea
+просто даёт самому переносу случиться). Автогрост — НЕ через примитив `Textarea`/`Composer`,
+а свой мини-эффект в доке (`height='auto'` → `min(scrollHeight, 128)`, `overflowY` авто при
+переполнении; пересчёт на `[input, state]`), чтобы не тащить рамку/`min-h-[96px]` примитива в
+pill и не сломать анимации дока. `inputRef` стал `HTMLTextAreaElement`.
+
+**По-прежнему сознательно НЕ тронуто:** не оборачивали в `Composer` и НЕ вешали панель
+умлаутов (`GermanCharBar`) — чтобы не сломать поведение/анимации. Идея «умлауты в
+ассистенте» — в [[post-mvp-backlog]].
 
 ## Связано
 - [[conventions]] (Frontend patterns)

@@ -22,7 +22,7 @@ export type ProposeTargetType = (typeof PROPOSE_TARGET_TYPES)[number];
 export const proposeToolDecl: ToolDecl = {
   name: 'propose',
   description:
-    "Propose a change to the learner's saved data (a word, grammar note, homework correction, exercise set, profile field). Creates a card the learner can Apply, Refine or Discard. This is the ONLY way to save anything — nothing is saved until the learner Applies.",
+    "Propose a change to the learner's saved data (a word, grammar note, homework correction, exercise set, profile field). Creates a card the learner can Apply, Refine or Discard. This is the ONLY way to save anything — nothing is saved until the learner Applies. To add or change SEVERAL items at once (e.g. a list of words), emit MULTIPLE `propose` calls in the SAME response — one call per item — never pack several items into one call.",
   parameters: {
     type: 'OBJECT',
     properties: {

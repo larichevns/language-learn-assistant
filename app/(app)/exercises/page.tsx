@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { ProposalCard } from '@/components/assistant/proposal-card';
@@ -12,12 +12,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { SearchInput } from '@/components/ui/search-input';
+import { SortToggle } from '@/components/ui/sort-toggle';
 import { apiGet, apiPost } from '@/lib/api/client';
 import type { ChatProposal } from '@/lib/ai-client/chat-stream';
 
 interface SetRow {
   id: string;
   title: string;
+  entryDate: string;
   status: string;
   score?: number | null;
   grammarTopicId?: string | null;
@@ -33,13 +36,16 @@ interface GrammarRow {
 const OTHER_BUCKET = '__other__';
 
 function SetCard({ s, takeLabel, tasksLabel }: { s: SetRow; takeLabel: string; tasksLabel: string }) {
+  const f = useFormatter();
   return (
     <Link href={`/exercises/${s.id}`}>
       <Card className="transition-colors hover:border-primary/40">
         <CardContent className="flex items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <p className="truncate font-medium">{s.title}</p>
-            <p className="text-sm text-muted-foreground">{tasksLabel}</p>
+            <p className="text-sm text-muted-foreground">
+              {tasksLabel} · {f.dateTime(new Date(s.entryDate), { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           </div>
           {s.status === 'GRADED' && s.score != null ? (
             <Badge variant="success">{Math.round(s.score * 100)}%</Badge>
@@ -54,6 +60,7 @@ function SetCard({ s, takeLabel, tasksLabel }: { s: SetRow; takeLabel: string; t
 
 export default function ExercisesPage() {
   const t = useTranslations('exercises');
+  const tc = useTranslations('common');
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['exercises'], queryFn: () => apiGet<{ items: SetRow[] }>('/api/exercises?pageSize=100') });
   const grammar = useQuery({ queryKey: ['grammar'], queryFn: () => apiGet<{ items: GrammarRow[] }>('/api/grammar?pageSize=100') });
@@ -61,6 +68,8 @@ export default function ExercisesPage() {
   const [count, setCount] = useState(5);
   const [grammarTopicId, setGrammarTopicId] = useState('');
   const [proposals, setProposals] = useState<ChatProposal[]>([]);
+  const [search, setSearch] = useState('');
+  const [sortMode, setSortMode] = useState<'recent' | 'entryDate'>('recent');
   const [open, setOpen] = useGroupCollapse('lla:exercises:open-buckets');
 
   const generate = useMutation({
@@ -70,10 +79,24 @@ export default function ExercisesPage() {
 
   // Derived buckets: group sets by their linked grammar topic, with a trailing
   // "other" bucket for manual / topic-less sets. Presentation only — no CRUD.
+  const filteredSets = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const items = data?.items ?? [];
+    if (!q) return items;
+    return items.filter(
+      (s) => s.title.toLowerCase().includes(q) || (s.grammarTopic?.title ?? '').toLowerCase().includes(q),
+    );
+  }, [data, search]);
+
+  const sortedSets = useMemo(() => {
+    if (sortMode === 'recent') return filteredSets;
+    return [...filteredSets].sort((a, b) => Date.parse(b.entryDate) - Date.parse(a.entryDate));
+  }, [filteredSets, sortMode]);
+
   const buckets = useMemo(() => {
     const byId = new Map<string, { id: string; label: string; items: SetRow[] }>();
     const other: SetRow[] = [];
-    for (const s of data?.items ?? []) {
+    for (const s of sortedSets) {
       if (s.grammarTopicId) {
         const label = s.grammarTopic?.title ?? s.grammarTopicId;
         const existing = byId.get(s.grammarTopicId);
@@ -86,7 +109,7 @@ export default function ExercisesPage() {
     const topicBuckets = [...byId.values()].sort((a, b) => a.label.localeCompare(b.label));
     if (other.length > 0) topicBuckets.push({ id: OTHER_BUCKET, label: t('bucketOther'), items: other });
     return topicBuckets;
-  }, [data, t]);
+  }, [sortedSets, t]);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -115,6 +138,15 @@ export default function ExercisesPage() {
           {proposals.map((p) => (
             <ProposalCard key={p.id} proposal={p} onResolved={() => void qc.invalidateQueries({ queryKey: ['exercises'] })} />
           ))}
+        </div>
+      )}
+
+      {(data?.items?.length ?? 0) > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex-1">
+            <SearchInput value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} clearLabel={tc('clearSearch')} />
+          </div>
+          <SortToggle mode={sortMode} onChange={setSortMode} recentLabel={tc('sortRecent')} dateLabel={tc('sortByDate')} />
         </div>
       )}
 

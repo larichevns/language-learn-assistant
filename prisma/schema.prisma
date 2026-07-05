@@ -474,6 +474,7 @@ model Homework {
   correctionsJson  Json? // [{ original, corrected, errorType, explanationRu, case?, gender? }]
   errorSummaryJson Json? // counts per error type
   status           HomeworkStatus @default(DRAFT)
+  entryDate        DateTime       @default(now()) // user-editable record date (default = creation moment)
 
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   course       Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
@@ -486,6 +487,7 @@ model Homework {
 
   @@index([userId, status])
   @@index([userId, courseId])
+  @@index([userId, entryDate])
 }
 
 // ───────────────────────── ADAPTIVE LOOP (Phase 5) ─────────────────────────
@@ -591,6 +593,7 @@ model ClassNote {
   rawInput       String    @db.Text
   structuredJson Json? // extracted vocab / grammar / todos
   lessonDate     DateTime?
+  entryDate      DateTime  @default(now()) // user-editable record date (default = creation moment); seeded from lessonDate/createdAt
 
   user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
@@ -602,6 +605,7 @@ model ClassNote {
 
   @@index([userId, courseId])
   @@index([userId, groupId])
+  @@index([userId, entryDate])
 }
 
 // ───────────────────────── EXERCISES (AI-generated quizzes) ─────────────────────────
@@ -645,6 +649,7 @@ model ExerciseSet {
   cefrLevel      CefrLevel?
   status         ExerciseStatus   @default(GENERATED)
   score          Float?
+  entryDate      DateTime         @default(now()) // user-editable record date (default = creation moment)
 
   user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   unit         Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
@@ -656,6 +661,7 @@ model ExerciseSet {
   updatedAt DateTime @updatedAt
 
   @@index([userId, status])
+  @@index([userId, entryDate])
 }
 
 model ExerciseItem {

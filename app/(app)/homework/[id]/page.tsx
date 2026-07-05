@@ -6,12 +6,13 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { apiGet, apiPost } from '@/lib/api/client';
+import { apiGet, apiPatch, apiPost } from '@/lib/api/client';
 import { ProposalCard } from '@/components/assistant/proposal-card';
 import type { ChatProposal } from '@/lib/ai-client/chat-stream';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { EntryDateInput } from '@/components/writing/entry-date-input';
 
 interface Correction {
   original: string;
@@ -28,12 +29,14 @@ interface Homework {
   source?: string;
   imageUrl?: string | null;
   status: string;
+  entryDate: string;
   correctionsJson?: Correction[] | null;
 }
 
 export default function HomeworkDetailPage() {
   const id = String(useParams().id);
   const t = useTranslations('homework');
+  const tc = useTranslations('common');
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['homework', id], queryFn: () => apiGet<Homework>(`/api/homework/${id}`) });
   const [proposals, setProposals] = useState<ChatProposal[]>([]);
@@ -44,6 +47,18 @@ export default function HomeworkDetailPage() {
     onSuccess: (res) => {
       setProposals(res.proposals);
       setNote(res.text);
+    },
+  });
+
+  const updateDate = useMutation({
+    mutationFn: (entryDate: string) => apiPatch<Homework>(`/api/homework/${id}`, { entryDate }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['homework', id] });
+      void qc.invalidateQueries({ queryKey: ['homework'] });
+    },
+    onError: () => {
+      // Resync the displayed date to what the server actually holds.
+      void qc.invalidateQueries({ queryKey: ['homework', id] });
     },
   });
 
@@ -66,6 +81,17 @@ export default function HomeworkDetailPage() {
         <Button onClick={() => correct.mutate()} disabled={correct.isPending} className="gap-2">
           {correct.isPending ? <Spinner /> : <Wand2 className="h-4 w-4" />} {t('check')}
         </Button>
+      </div>
+
+      <div className="mb-5 flex flex-col gap-1">
+        <EntryDateInput
+          value={data.entryDate}
+          onChange={(v) => {
+            if (v) updateDate.mutate(v);
+          }}
+          label={tc('entryDate')}
+        />
+        {updateDate.isError && <p className="text-xs text-destructive">{tc('saveFailed')}</p>}
       </div>
 
       <Card className="mb-5">

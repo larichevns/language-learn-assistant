@@ -11,7 +11,12 @@
     "remove": "remove",
     "words": "{n, plural, one {# word} other {# words}}",
     "chars": "{n, plural, one {# character} other {# characters}}",
-    "insertChar": "Insert {char}"
+    "insertChar": "Insert {char}",
+    "clearSearch": "Clear search",
+    "entryDate": "Entry date",
+    "sortRecent": "Recent first",
+    "sortByDate": "By entry date",
+    "saveFailed": "Couldn’t save. Please try again."
   },
   "landing": {
     "title": "Learn German with an AI assistant",
@@ -99,7 +104,8 @@
     "hint": "…or just tell the Assistant «add the word aufstehen» — it fills everything in.",
     "dueBadge": "due",
     "empty": "Empty so far. Add your first word or ask the Assistant.",
-    "saveError": "Couldn’t save the word. Please try again."
+    "saveError": "Couldn’t save the word. Please try again.",
+    "searchPlaceholder": "Search words…"
   },
   "group": {
     "addGroup": "Group",
@@ -167,7 +173,8 @@
     "bucketReview": "To review",
     "bucketCorrected": "Corrected",
     "bucketDrafts": "Drafts",
-    "bucketArchive": "Archive"
+    "bucketArchive": "Archive",
+    "searchPlaceholder": "Search homework…"
   },
   "grammar": {
     "title": "Grammar",
@@ -179,7 +186,8 @@
     "pitfalls": "Pitfalls",
     "empty": "No topics yet. Ask the Assistant «explain Akkusativ».",
     "allTopics": "All topics",
-    "fallbackTitle": "Grammar topic"
+    "fallbackTitle": "Grammar topic",
+    "searchPlaceholder": "Search topics…"
   },
   "exercises": {
     "title": "Exercises",
@@ -192,7 +200,9 @@
     "tasks": "{count} tasks",
     "allExercises": "All exercises",
     "answerPlaceholder": "answer",
-    "bucketOther": "Other"
+    "bucketOther": "Other",
+    "searchPlaceholder": "Search exercises…",
+    "entryDateError": "Couldn't update the date. Please try again."
   },
   "notes": {
     "title": "Class notes",
@@ -206,18 +216,23 @@
     "grammar": "Grammar",
     "allNotes": "All notes",
     "fallbackTitle": "Note",
-    "parseHint": "Tap «Parse with Assistant» and ask it to «extract words and grammar» — it'll propose a structured breakdown."
+    "parseHint": "Tap «Parse with Assistant» and ask it to «extract words and grammar» — it'll propose a structured breakdown.",
+    "searchPlaceholder": "Search notes…",
+    "edit": "Edit",
+    "sendToHomework": "Send to homework",
+    "markdownHint": "Markdown supported: # headings, **bold**, lists"
   },
   "assistant": {
     "title": "Lingua",
     "scopeGlobal": "Whole course",
     "empty": "Ask anything about German — or say «add the word …» and I'll set it up.",
-    "placeholder": "Message… (Enter to send)",
+    "placeholder": "Message… (Enter to send, Shift+Enter for a new line)",
     "thinking": "Thinking…",
     "stop": "Stop",
     "sendLabel": "Send",
     "newChat": "New chat",
-    "closeLabel": "Close"
+    "closeLabel": "Close",
+    "applyAll": "Apply all · {count}"
   },
   "proposal": {
     "apply": "Apply",

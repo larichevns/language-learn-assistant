@@ -29,6 +29,7 @@ const CreateBody = z
     source: z.enum(['TEXT', 'IMAGE', 'VOICE']).optional(),
     // data: URL or http(s) URL — a pasted photo is a data URL
     imageUrl: z.string().max(8_000_000).optional(),
+    entryDate: z.string().datetime().optional(),
   })
   .refine((b) => (b.rawInput && b.rawInput.trim().length > 0) || Boolean(b.imageUrl), {
     message: 'rawInput or imageUrl required',
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
         source: (d.source ?? (d.imageUrl ? 'IMAGE' : 'TEXT')) as HomeworkSource,
         imageUrl: d.imageUrl,
         status: 'SUBMITTED',
+        entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
       },
     });
     return successResponse(row, 201);

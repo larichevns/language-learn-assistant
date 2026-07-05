@@ -1,16 +1,17 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { apiGet, apiPost } from '@/lib/api/client';
+import { apiGet, apiPatch, apiPost } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { Badge, Spinner } from '@/components/ui/feedback';
+import { EntryDateInput } from '@/components/writing/entry-date-input';
 import { GermanCharBar, handleGermanAltKey } from '@/components/writing/german-char-bar';
 import { useInsertableField } from '@/components/writing/use-insertable-field';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ interface Item {
 interface ExSet {
   id: string;
   title: string;
+  entryDate: string;
   status: string;
   score?: number | null;
   items: Item[];
@@ -67,9 +69,12 @@ function AnswerInput({
 export default function ExerciseDetailPage() {
   const id = String(useParams().id);
   const t = useTranslations('exercises');
+  const tc = useTranslations('common');
+  const qc = useQueryClient();
   const { data, isLoading, refetch } = useQuery({ queryKey: ['exercise', id], queryFn: () => apiGet<ExSet>(`/api/exercises/${id}`) });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [graded, setGraded] = useState(false);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   const submit = useMutation({
     mutationFn: () =>
@@ -79,6 +84,19 @@ export default function ExerciseDetailPage() {
     onSuccess: async () => {
       setGraded(true);
       await refetch();
+    },
+  });
+
+  const updateEntryDate = useMutation({
+    mutationFn: (entryDate: string) => apiPatch<ExSet>(`/api/exercises/${id}`, { entryDate }),
+    onMutate: () => setDateError(null),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['exercise', id] });
+      void qc.invalidateQueries({ queryKey: ['exercises'] });
+    },
+    onError: () => {
+      setDateError(t('entryDateError'));
+      void qc.invalidateQueries({ queryKey: ['exercise', id] });
     },
   });
 
@@ -100,6 +118,18 @@ export default function ExerciseDetailPage() {
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-bold">{data.title}</h1>
         {isGraded && data.score != null && <Badge variant="success">{Math.round(data.score * 100)}%</Badge>}
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <EntryDateInput
+          value={data.entryDate}
+          label={tc('entryDate')}
+          onChange={(v) => {
+            if (v) updateEntryDate.mutate(v);
+          }}
+        />
+        {updateEntryDate.isPending && <Spinner className="text-muted-foreground" />}
+        {dateError && <span className="text-sm text-destructive">{dateError}</span>}
       </div>
 
       <div className="flex flex-col gap-3">

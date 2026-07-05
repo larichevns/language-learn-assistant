@@ -12,6 +12,7 @@ import { flattenGroupOptions, type GroupLabels, totalItems } from '@/components/
 import { useGroupCollapse } from '@/components/groups/use-collapse';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/feedback';
+import { SearchInput } from '@/components/ui/search-input';
 import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api/client';
 import type { CreateGroupDto, GroupNode, GroupTree } from '@/lib/api/collection-groups';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ export default function GrammarPage() {
   });
   const tree = useQuery({ queryKey: ['groups', 'GRAMMAR'], queryFn: () => apiGet<GroupTree>('/api/groups?domain=GRAMMAR') });
 
+  const [search, setSearch] = useState('');
   const [open, setOpen] = useGroupCollapse('lla:grammar:open-groups');
   const [formMode, setFormMode] = useState<GroupFormMode | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -80,14 +82,20 @@ export default function GrammarPage() {
 
   const groups = tree.data?.groups ?? [];
   const options = useMemo(() => flattenGroupOptions(groups), [groups]);
+  const filteredTopics = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const items = topics.data?.items ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [topics.data, search]);
   const topicsByGroup = useMemo(() => {
     const map = new Map<string, GrammarRow[]>();
-    for (const item of topics.data?.items ?? []) {
+    for (const item of filteredTopics) {
       if (item.groupId) map.set(item.groupId, [...(map.get(item.groupId) ?? []), item]);
     }
     return map;
-  }, [topics.data]);
-  const ungrouped = useMemo(() => (topics.data?.items ?? []).filter((item) => !item.groupId), [topics.data]);
+  }, [filteredTopics]);
+  const ungrouped = useMemo(() => filteredTopics.filter((item) => !item.groupId), [filteredTopics]);
 
   const actions = {
     onAddSubgroup: (parent: GroupNode) => {
@@ -152,6 +160,12 @@ export default function GrammarPage() {
 
       {loadError && <p className="mb-4 text-sm text-destructive">{tg('loadError')}</p>}
       {moveError && <p className="mb-4 text-sm text-destructive">{moveError}</p>}
+
+      {totalCount > 0 && (
+        <div className="mb-4">
+          <SearchInput value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} clearLabel={tc('clearSearch')} />
+        </div>
+      )}
 
       {hasGroups && (
         <div className="mb-3 flex justify-end">

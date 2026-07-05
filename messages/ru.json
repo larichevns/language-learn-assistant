@@ -11,7 +11,12 @@
     "remove": "убрать",
     "words": "{n, plural, one {# слово} few {# слова} many {# слов} other {# слов}}",
     "chars": "{n, plural, one {# символ} few {# символа} many {# символов} other {# символов}}",
-    "insertChar": "Вставить {char}"
+    "insertChar": "Вставить {char}",
+    "clearSearch": "Очистить поиск",
+    "entryDate": "Дата записи",
+    "sortRecent": "Сначала недавние",
+    "sortByDate": "По дате записи",
+    "saveFailed": "Не удалось сохранить. Попробуйте ещё раз."
   },
   "landing": {
     "title": "Учи немецкий с ИИ-ассистентом",
@@ -99,7 +104,8 @@
     "hint": "…или просто скажи Ассистенту «добавь слово aufstehen» — он заполнит всё сам.",
     "dueBadge": "к повторению",
     "empty": "Пока пусто. Добавь первое слово или попроси Ассистента.",
-    "saveError": "Не удалось сохранить слово. Попробуй ещё раз."
+    "saveError": "Не удалось сохранить слово. Попробуй ещё раз.",
+    "searchPlaceholder": "Поиск слов…"
   },
   "group": {
     "addGroup": "Группа",
@@ -167,7 +173,8 @@
     "bucketReview": "На проверку",
     "bucketCorrected": "Исправлено",
     "bucketDrafts": "Черновики",
-    "bucketArchive": "Архив"
+    "bucketArchive": "Архив",
+    "searchPlaceholder": "Поиск заданий…"
   },
   "grammar": {
     "title": "Грамматика",
@@ -179,7 +186,8 @@
     "pitfalls": "Подводные камни",
     "empty": "Пока нет тем. Спроси Ассистента «объясни Akkusativ».",
     "allTopics": "Все темы",
-    "fallbackTitle": "Грамматика"
+    "fallbackTitle": "Грамматика",
+    "searchPlaceholder": "Поиск тем…"
   },
   "exercises": {
     "title": "Упражнения",
@@ -192,7 +200,9 @@
     "tasks": "{count} заданий",
     "allExercises": "Все упражнения",
     "answerPlaceholder": "ответ",
-    "bucketOther": "Прочее"
+    "bucketOther": "Прочее",
+    "searchPlaceholder": "Поиск упражнений…",
+    "entryDateError": "Не удалось обновить дату. Попробуй ещё раз."
   },
   "notes": {
     "title": "Заметки с уроков",
@@ -206,18 +216,23 @@
     "grammar": "Грамматика",
     "allNotes": "Все заметки",
     "fallbackTitle": "Заметка",
-    "parseHint": "Нажми «Разобрать с Ассистентом» и попроси «вытащи слова и грамматику» — он предложит structured-разбор."
+    "parseHint": "Нажми «Разобрать с Ассистентом» и попроси «вытащи слова и грамматику» — он предложит structured-разбор.",
+    "searchPlaceholder": "Поиск заметок…",
+    "edit": "Редактировать",
+    "sendToHomework": "Отправить в домашку",
+    "markdownHint": "Поддерживается Markdown: # заголовки, **жирный**, списки"
   },
   "assistant": {
     "title": "Lingua",
     "scopeGlobal": "Весь курс",
     "empty": "Спроси что угодно по немецкому — или скажи «добавь слово …», и я всё оформлю.",
-    "placeholder": "Сообщение… (Enter — отправить)",
+    "placeholder": "Сообщение… (Enter — отправить, Shift+Enter — перенос строки)",
     "thinking": "Думаю…",
     "stop": "Остановить",
     "sendLabel": "Отправить",
     "newChat": "Новый чат",
-    "closeLabel": "Закрыть"
+    "closeLabel": "Закрыть",
+    "applyAll": "Применить все · {count}"
   },
   "proposal": {
     "apply": "Применить",

@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { MessageSquarePlus, Mic, Send, Sparkles, Square, X } from 'lucide-react';
+import { CheckCheck, MessageSquarePlus, Mic, Send, Sparkles, Square, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -45,8 +45,11 @@ export function AssistantDock() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
+  // Per-message "Apply all" trigger: bumping the counter for a message id makes
+  // every still-pending ProposalCard in that message apply itself.
+  const [applyAll, setApplyAll] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -99,6 +102,18 @@ export function AssistantDock() {
       cancelled = true;
     };
   }, [open, scope.type, scope.id]);
+
+  // Autosize the composer: it's a textarea now (Enter sends, Shift+Enter = new line),
+  // grow it with the content up to ~5 lines, then scroll. Recompute on input and on
+  // (re)mount when the dock state flips collapsed → bar → window.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const max = 128;
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+    el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
+  }, [input, state]);
 
   // hover-intent: collapsed → bar → collapsed (desktop only; touch taps the pill → window)
   function onEnter() {
@@ -185,14 +200,15 @@ export function AssistantDock() {
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[hsl(248_52%_68%)]">
         <Sparkles className="h-4 w-4 text-primary-foreground" />
       </span>
-      <input
+      <textarea
         ref={inputRef}
         value={input}
+        rows={1}
         onFocusCapture={() => !open && openWindow()}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder={t('placeholder')}
-        className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
+        className="max-h-32 min-w-0 flex-1 resize-none bg-transparent text-sm font-semibold leading-relaxed text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
       />
       <span className="hidden text-muted-foreground sm:inline">
         <Mic className="h-[18px] w-[18px]" />
@@ -304,9 +320,26 @@ export function AssistantDock() {
                           )}
                         </div>
                       )}
+                      {m.proposals && m.proposals.length >= 2 && (
+                        <div className="w-[86%]">
+                          <button
+                            onClick={() => setApplyAll((s) => ({ ...s, [m.id]: (s[m.id] ?? 0) + 1 }))}
+                            disabled={!!applyAll[m.id]}
+                            className="flex items-center gap-1.5 rounded-lg bg-success/10 px-3 py-1.5 text-xs font-bold text-success transition-colors hover:bg-success/20 disabled:opacity-50"
+                          >
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            {t('applyAll', { count: m.proposals.length })}
+                          </button>
+                        </div>
+                      )}
                       {m.proposals?.map((p) => (
                         <div key={p.id} className="w-[86%]">
-                          <ProposalCard proposal={p} onResolved={() => queryClient.invalidateQueries()} onRefine={(pr) => setInput(`Уточни: ${pr.summary}. `)} />
+                          <ProposalCard
+                            proposal={p}
+                            applySignal={applyAll[m.id] ?? 0}
+                            onResolved={() => queryClient.invalidateQueries()}
+                            onRefine={(pr) => setInput(`Уточни: ${pr.summary}. `)}
+                          />
                         </div>
                       ))}
                     </motion.div>

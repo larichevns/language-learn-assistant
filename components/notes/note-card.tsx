@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { GroupOption } from '@/components/groups/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +15,7 @@ export interface NoteRow {
   id: string;
   title?: string | null;
   rawInput: string;
+  entryDate: string;
   groupId?: string | null;
 }
 
@@ -36,6 +37,7 @@ export function NoteCard({
 }) {
   const t = useTranslations('notes');
   const tg = useTranslations('group');
+  const format = useFormatter();
 
   return (
     <Card className="h-full">
@@ -44,6 +46,9 @@ export function NoteCard({
           <p className="font-medium leading-tight">{note.title ?? t('noTitle')}</p>
           <p className="truncate text-sm text-muted-foreground">{note.rawInput.slice(0, PREVIEW_CHARS)}</p>
         </Link>
+        <p className="text-xs text-muted-foreground">
+          {format.dateTime(new Date(note.entryDate), { day: 'numeric', month: 'short' })}
+        </p>
         <div className="mt-auto flex items-center justify-end gap-1.5 pt-2">
           {moving && <Spinner className="text-muted-foreground" />}
           <Select

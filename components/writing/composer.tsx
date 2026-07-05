@@ -25,6 +25,8 @@ export interface ComposerProps {
   german?: boolean;
   /** Show the word counter (default: true). */
   counter?: boolean;
+  /** Muted helper text shown near the counter/footer (e.g. a formatting hint). */
+  hint?: ReactNode;
   /** Controls in the action row, left of the submit button (e.g. a photo button). */
   footerLeft?: ReactNode;
   /** Extra content inside the frame, below the actions (e.g. an image preview). */
@@ -49,6 +51,7 @@ export function Composer({
   submitDisabled = false,
   german = true,
   counter = true,
+  hint,
   footerLeft,
   children,
 }: ComposerProps) {
@@ -68,7 +71,7 @@ export function Composer({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-input bg-background shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-ring">
+    <div className="overflow-hidden rounded-lg border border-input bg-card shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-ring">
       {title !== undefined && (
         <>
           <input
@@ -100,6 +103,8 @@ export function Composer({
           )}
         </div>
       )}
+
+      {hint && <div className="px-3 pb-1 text-xs text-muted-foreground">{hint}</div>}
 
       {(onSubmit || footerLeft) && (
         <div className="flex flex-wrap items-center gap-3 px-3 pb-3 pt-1">

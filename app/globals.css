@@ -43,8 +43,8 @@
     --deutsch: 248 49% 58%;
     --deutsch-foreground: 0 0% 100%;
 
-    --border: 40 19% 91%;
-    --input: 40 19% 91%;
+    --border: 38 16% 84%;
+    --input: 38 16% 84%;
     --ring: 248 49% 58%;
 
     --radius: 1rem;
@@ -86,8 +86,8 @@
     --deutsch: 248 52% 70%;
     --deutsch-foreground: 252 30% 14%;
 
-    --border: 252 10% 22%;
-    --input: 252 10% 22%;
+    --border: 252 10% 27%;
+    --input: 252 10% 27%;
     --ring: 248 52% 70%;
   }
 }
