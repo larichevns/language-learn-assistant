@@ -16,7 +16,7 @@ Create and apply Entity Framework Core migrations with safety checks.
    ```bash
    dotnet build $1
    ```
-   If build fails — stop and fix first.
+   If build fails - stop and fix first.
 
 2. Check for pending model changes:
    ```bash

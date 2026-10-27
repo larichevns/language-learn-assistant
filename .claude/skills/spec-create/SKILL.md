@@ -15,11 +15,11 @@ Create a complete feature specification before any code is written. Enforces the
 - User wants to start a non-trivial implementation
 - Before any architectural / API / DB work on a new capability
 
-**Skip** for bug fixes, small refactors, config changes — these don't need a spec.
+**Skip** for bug fixes, small refactors, config changes - these don't need a spec.
 
 ## Workflow
 
-### Step 1 — Detect environment
+### Step 1 - Detect environment
 
 Check if project uses spec-first vault pattern:
 
@@ -33,7 +33,7 @@ test -f .claude/rules/spec-first.md && echo "rules_found"
 - If `vault/specs/SPEC_TEMPLATE.md` exists → load and use it as base
 - Otherwise → write spec to `docs/specs/{feature-name}.md` or `specs/{feature-name}.md` (whichever convention the repo uses; create the folder if neither)
 
-### Step 2 — Gather feature context
+### Step 2 - Gather feature context
 
 Before writing the spec, briefly ask the user OR infer from conversation:
 
@@ -43,7 +43,7 @@ Before writing the spec, briefly ask the user OR infer from conversation:
 
 If the user already provided enough context, skip the questions and proceed.
 
-### Step 3 — Search vault for relevant existing knowledge
+### Step 3 - Search vault for relevant existing knowledge
 
 If `vault/` exists, search for prior decisions, business rules, and related specs:
 
@@ -53,7 +53,7 @@ grep -r "{feature-keyword}" vault/knowledge/ vault/specs/ vault/api/ 2>/dev/null
 
 Reference findings via `[[wiki-links]]` in the spec.
 
-### Step 4 — Write the spec with 6 mandatory blocks
+### Step 4 - Write the spec with 6 mandatory blocks
 
 **Frontmatter** (Obsidian style):
 
@@ -65,45 +65,45 @@ status: draft
 ---
 ```
 
-**Block 1 — User Stories** (минимум 3)
+**Block 1 - User Stories** (минимум 3)
 - Format: `As [role], I want [action], so that [result]`
 - Concrete roles (Buyer, Purchaser, Admin) not "user"
 - Concrete actions ("create a pre-order with 3 line items") not "manage data"
 
-**Block 2 — Data Model**
+**Block 2 - Data Model**
 - Table per entity with columns: `name`, `type`, `constraints`, `notes`
 - Types as in SQL: `uuid`, `text`, `jsonb`, `timestamptz`, `numeric(18,2)`
 - FK relationships explicit: `→ users(id) on delete restrict`
 - Index hints if performance-sensitive
 
-**Block 3 — API**
+**Block 3 - API**
 - Method + path + auth scope
 - Request body (TypeScript or JSON schema)
 - Response (success + error shapes)
 - Status codes (200, 201, 400, 403, 404, 409, 422)
 - Idempotency / pagination / filtering if applicable
 
-**Block 4 — Screens**
+**Block 4 - Screens**
 - Page or component name + route
 - What it displays (lists, forms, modals)
 - Actions available (with permission scope)
 - States: loading / empty / error / success / partial
 
-**Block 5 — Business Logic**
+**Block 5 - Business Logic**
 - Validation rules (with concrete bounds: "min 1, max 10000")
 - State transitions (state diagram if non-trivial)
-- Formulas (pricing, discounts, taxes — with examples)
+- Formulas (pricing, discounts, taxes - with examples)
 - Permissions matrix (who can do what)
 - Race conditions / locking strategy if concurrent
 
-**Block 6 — Edge Cases**
+**Block 6 - Edge Cases**
 - No data: empty list, empty filter result, first-time user
 - API down: retry policy, fallback UX
 - Concurrent editing: optimistic locking? last-write-wins?
-- Partial failures: payment succeeds, email fails — what then?
+- Partial failures: payment succeeds, email fails - what then?
 - Data validation: invalid input, oversized payloads, malicious input
 
-### Step 5 — Quality gate
+### Step 5 - Quality gate
 
 Before finishing, verify each block answers "yes":
 
@@ -116,7 +116,7 @@ Before finishing, verify each block answers "yes":
 
 If any block is incomplete, ask the user OR mark `<!-- needs input: {what} -->` so the human can fill it.
 
-### Step 6 — Cross-reference and report
+### Step 6 - Cross-reference and report
 
 After writing:
 
@@ -170,7 +170,7 @@ Response 201:
 Errors: 400 (validation), 403 (no permission), 409 (conflict)
 
 ## 4. Screens
-### `{ScreenName}` — `/route`
+### `{ScreenName}` - `/route`
 - Displays: ...
 - Actions: ...
 - States: loading | empty | error | success

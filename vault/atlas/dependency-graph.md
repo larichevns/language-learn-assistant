@@ -23,12 +23,12 @@ lib/ai/propose/apply-db ─→ lib/learning (homework errors→recordAttempt · 
 app/(app)/progress ─→ app/api/progress/{stats,timeline} ─→ lib/learning/metrics (all derived from Review/Attempt/SrsCard logs)
 app/api/crons/rollup ─→ lib/learning/rollup ─→ {metrics, decay, error-map, timeline} + lib/ai/orchestrator (background weekly note, never billed)
 
-# Collection grouping (2026-06-17 — generalizes vocab-grouping to all domains):
+# Collection grouping (2026-06-17 - generalizes vocab-grouping to all domains):
 app/(app)/{vocabulary,grammar,notes} ─→ components/groups/* (GroupedAccordion · use-collapse · group-dialogs · types) ─→ app/api/groups/** (GET/POST · [id] PATCH/DELETE) ─→ lib/api/collection-groups (DTOs + domain maps + normGroupName) ─→ lib/db
 components/{grammar/grammar-topic-card, notes/note-card} ─→ components/groups/types          # leaf render-props for the generic accordion
 lib/ai/propose/apply-db ─→ resolveGroupId(tx,userId,domain,p) ─→ lib/api/collection-groups (normGroupName) + lib/db (CollectionGroup, domain-scoped create-or-reuse)
 lib/ai/envelope/{from-db,layers,caps} ─→ per-domain group block (## Vocabulary/Grammar/Note groups, {g:id}, CAPS.GROUPS)
-app/(app)/{homework,exercises} ─→ DERIVED presentational buckets (status / linked grammarTopic) — NO groups API, NO CollectionGroup rows
+app/(app)/{homework,exercises} ─→ DERIVED presentational buckets (status / linked grammarTopic) - NO groups API, NO CollectionGroup rows
 # REMOVED in this change: lib/api/vocab-groups (→ collection-groups) · app/api/vocabulary/groups/** (→ /api/groups?domain=VOCAB) · components/vocabulary/{group-section,group-dialogs,use-vocab-collapse,types,group-actions} (→ components/groups/*).
 # See [[Одна-CollectionGroup-с-доменом-VOCAB-GRAMMAR-NOTE-VocabGroup-свёрнута-rename-миграцией]] · [[groups]] · [[collection-grouping]].
 
@@ -40,12 +40,12 @@ Phase 1 ran lib/ai against JSON seed data with NO lib/db dependency (a pluggable
 ```
 
 ## Blast-radius notes
-- Changing the **envelope layer order** affects prefix-cache hit rate, not correctness — but re-check `caps` and the cache boundary marks.
+- Changing the **envelope layer order** affects prefix-cache hit rate, not correctness - but re-check `caps` and the cache boundary marks.
 - Changing a **propose payload shape** requires: zod schema (`propose/persist`) + applier (`propose/dispatch`) + the prompt template that teaches the model + any UI that renders the card. Keep them in sync.
-- `prisma/schema.prisma` is upstream of nearly everything — schema changes ripple to services, AI appliers, and admin.
-- **SRS is per-direction** (`@@unique([vocabEntryId, direction])`): `VocabEntry.srsCards[]` is a LIST — anything reading it must handle multiple cards; the review UI is direction-aware (DE→RU, RU→DE, PRODUCE_ARTICLE/PLURAL).
+- `prisma/schema.prisma` is upstream of nearly everything - schema changes ripple to services, AI appliers, and admin.
+- **SRS is per-direction** (`@@unique([vocabEntryId, direction])`): `VocabEntry.srsCards[]` is a LIST - anything reading it must handle multiple cards; the review UI is direction-aware (DE→RU, RU→DE, PRODUCE_ARTICLE/PLURAL).
 - **FSRS scheduling** lives in `lib/srs/scheduler.ts` (ts-fsrs); shared by vocab + grammar reviews. The `Review` log is the raw revlog kept for future per-user optimization.
-- **Loop writes bypass propose/Apply**: `recordAttempt` / FSRS / BKT / timeline are deterministic state written from the learner's OWN grade actions — not model proposals. The model stays a non-writer.
+- **Loop writes bypass propose/Apply**: `recordAttempt` / FSRS / BKT / timeline are deterministic state written from the learner's OWN grade actions - not model proposals. The model stays a non-writer.
 
 ## Related
 - [[architecture]]

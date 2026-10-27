@@ -31,7 +31,7 @@ Single Next.js app (frontend + backend + AI lib). All TypeScript.
 
 ## Dev infrastructure
 - **Local Postgres via Docker Compose** (`docker compose up -d`).
-- **Guards (rate-limit/cost/cache) in-memory for dev**, swappable to Upstash for prod — see [[Локальная-инфра-Docker-Postgres-плюс-in-memory-guards]].
+- **Guards (rate-limit/cost/cache) in-memory for dev**, swappable to Upstash for prod - see [[Локальная-инфра-Docker-Postgres-плюс-in-memory-guards]].
 
 ## Related
 - [[architecture]]

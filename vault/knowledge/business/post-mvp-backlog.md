@@ -5,12 +5,12 @@ date: 2026-06-13
 
 # POST-MVP Backlog
 
-Everything intentionally deferred past the first usable version. **Rule: nothing leaves the MVP silently — it lands here.** The hero MVP is tutor chat + vocab/SRS + homework correction ([[mvp-scope-and-phases]]).
+Everything intentionally deferred past the first usable version. **Rule: nothing leaves the MVP silently - it lands here.** The hero MVP is tutor chat + vocab/SRS + homework correction ([[mvp-scope-and-phases]]).
 
 ## Secondary in MVP build, but not the hero (ship after the hero loop works)
-- **Exercise generation UI + grading** — schema/AI/route built in Phases 1–2; full UI polish after the hero.
-- **Grammar knowledge base UI** — topics list/detail; AI `grammar_explain` exists earlier, the browseable KB UI comes after the hero.
-- **Class-notes UI** — intake + structure extraction.
+- **Exercise generation UI + grading** - schema/AI/route built in Phases 1-2; full UI polish after the hero.
+- **Grammar knowledge base UI** - topics list/detail; AI `grammar_explain` exists earlier, the browseable KB UI comes after the hero.
+- **Class-notes UI** - intake + structure extraction.
 
 ## Deferred (Phase 4 / later)
 - **SRS upgrade to FSRS** (replace SM-2): forecast calendar, daily-load balancing, leech detection, per-deck new-card limits, review heatmap.
@@ -24,7 +24,7 @@ Everything intentionally deferred past the first usable version. **Rule: nothing
 - **Productionization for many users**: move guards in-memory→Upstash, hosted Postgres (Neon/Supabase), billing/tiers if it goes public.
 
 ## UI / design polish (Phase 7 follow-ups, from ui-tester)
-- Mobile nav drawer: proper slide-in animation (shadcn `Sheet`) — backdrop + z-order already fixed.
+- Mobile nav drawer: proper slide-in animation (shadcn `Sheet`) - backdrop + z-order already fixed.
 - Manual "add word" form: run through the propose/Apply enrichment pipeline (article/gender/plural/level) instead of saving bare lemma+translation.
 - Dark mode: raise sidebar text contrast (`text-muted-foreground` → `text-foreground/80`).
 - Optional vertically-centered assistant window mode (current: grows up from the bottom composer, per ToonyGamy).
@@ -38,40 +38,40 @@ Everything intentionally deferred past the first usable version. **Rule: nothing
 
 ## Phase 5 follow-ups (optional polish / deferred within the phase)
 <!-- Updated: 2026-06-13 | polish batch after Slice 8 -->
-- **Desired-retention slider** — **DONE** (Settings → «Целевое запоминание», 0.80–0.97; `GET/PATCH /api/profile`; verified live: drag → debounced PATCH → DB persisted).
-- **Grammar-due on the dashboard** — **DONE** (the «К повторению» card sums vocab + grammar due, with a `{vocab} слов · {grammar} грамм.` breakdown; click routes to wherever work waits).
-- **Weekly-note model** — **DONE** (lite→**flash** for tighter format adherence; `cleanNote` still strips stray markdown as a safety net).
-- **i18n detail pages** — **DONE** (grammar/homework/notes/exercises `[id]` externalized to `messages/{ru,en}.json`; the `'(фото-домашка)'` rawInput sentinel left as data, not translated).
+- **Desired-retention slider** - **DONE** (Settings → «Целевое запоминание», 0.80-0.97; `GET/PATCH /api/profile`; verified live: drag → debounced PATCH → DB persisted).
+- **Grammar-due on the dashboard** - **DONE** (the «К повторению» card sums vocab + grammar due, with a `{vocab} слов · {grammar} грамм.` breakdown; click routes to wherever work waits).
+- **Weekly-note model** - **DONE** (lite→**flash** for tighter format adherence; `cleanNote` still strips stray markdown as a safety net).
+- **i18n detail pages** - **DONE** (grammar/homework/notes/exercises `[id]` externalized to `messages/{ru,en}.json`; the `'(фото-домашка)'` rawInput sentinel left as data, not translated).
 - **FSRS per-user parameter optimization** once a user has ~1000+ reviews (the `Review` log is the training data); until then, global defaults.
 - **Replay `Review` log to seed FSRS stability** for pre-FSRS cards (today they transition fresh on the next review).
-- Spaced-repetition for grammar — **DONE** (Slice 6: `GrammarCard` + production self-grade).
+- Spaced-repetition for grammar - **DONE** (Slice 6: `GrammarCard` + production self-grade).
 - **Nightly rollup deploy (Slice 8 follow-ups):** ✅ `CRON_SECRET` now set (real 32-byte hex; `crons/rollup`+`crons/cleanup` verified 200). At scale, bound `runRollup` to learners active in the last ~30d instead of all profiles. Per-user note opt-out is unbuilt. (For prod, set the secrets as host env vars, not a file.)
 - Remaining Phase 5 slices (9 RAG/pgvector · 10 ELO/streaks/import/graded-reading/CEFR-goals) are scoped in [[phase-5-implementation-plan]], not here.
 
 ## Chat / thread (2026-06-17)
 <!-- Updated: 2026-06-17 | chat fixes session -->
-- **Activate thread summarization** — **DONE** (2026-06-17). `summarizeThreadIfNeeded` fires from the chat route after each successful turn (rolling, background, non-billed; folds turns older than the last 12 into `threadSummary`, merging the prior summary). Detail: [[чат-это-стол-БД-это-память-rolling-summary-написан-но-не-вызывается]]. Optional follow-up: surface a collapsible "earlier in this chat (summary)" divider at the top of the dock when `resolve` returns a non-null `summary`.
-- **"Continue?" affordance for a dangling user turn** — when `resolve` returns a thread whose last turn is an unanswered USER message (stream was cut), the UI could offer to retry it instead of silently leaving it. (The model side is already fixed — it no longer answers it on the next send.)
+- **Activate thread summarization** - **DONE** (2026-06-17). `summarizeThreadIfNeeded` fires from the chat route after each successful turn (rolling, background, non-billed; folds turns older than the last 12 into `threadSummary`, merging the prior summary). Detail: [[чат-это-стол-БД-это-память-rolling-summary-написан-но-не-вызывается]]. Optional follow-up: surface a collapsible "earlier in this chat (summary)" divider at the top of the dock when `resolve` returns a non-null `summary`.
+- **"Continue?" affordance for a dangling user turn** - when `resolve` returns a thread whose last turn is an unanswered USER message (stream was cut), the UI could offer to retry it instead of silently leaving it. (The model side is already fixed - it no longer answers it on the next send.)
 
 ## Collection grouping (2026-06-17)
 <!-- Updated: 2026-06-17 | deferred from collection-grouping -->
 Shipped: generic `CollectionGroup` (domains VOCAB/GRAMMAR/NOTE), full taxonomy for vocab/grammar/notes, derived buckets for homework/exercises, richer `grammar_explain`. Spec: [[collection-grouping]] · decision: [[Одна-CollectionGroup-с-доменом-VOCAB-GRAMMAR-NOTE-VocabGroup-свёрнута-rename-миграцией]]. Deferred:
-- **ИИ-слияние близких дублей групп** (любого домена) — сейчас reuse через показ таксономии минимизирует дубли, но слияния нет (только ручное переименование).
-- **ИИ-описания групп/тем** — короткий авторский intro поверх раздела (опция «описание разных тем» НЕ взята в V1).
-- **Полная ИИ-таксономия для домашки/упражнений** — вместо текущей производной (статус-бакеты / связанная тема); своя таблица + ИИ-раскладка, если когда-нибудь понадобится.
-- **Revisit `grammar_explain` reasoning effort** (`low→medium`, 8192 thinking-токенов) — откатить одной строкой, если free-tier 429 участятся. `tutor_chat` сознательно оставлен `low`. Мониторить через usage-tracking.
+- **ИИ-слияние близких дублей групп** (любого домена) - сейчас reuse через показ таксономии минимизирует дубли, но слияния нет (только ручное переименование).
+- **ИИ-описания групп/тем** - короткий авторский intro поверх раздела (опция «описание разных тем» НЕ взята в V1).
+- **Полная ИИ-таксономия для домашки/упражнений** - вместо текущей производной (статус-бакеты / связанная тема); своя таблица + ИИ-раскладка, если когда-нибудь понадобится.
+- **Revisit `grammar_explain` reasoning effort** (`low→medium`, 8192 thinking-токенов) - откатить одной строкой, если free-tier 429 участятся. `tutor_chat` сознательно оставлен `low`. Мониторить через usage-tracking.
 - **Drag-and-drop переупорядочивание** групп (сейчас `orderIndex` правится через PATCH, без DnD).
 - **Группа как scope чата** (открыть тред в контексте конкретной группы).
-- **Уровни глубже 2** (сейчас инвариант — ровно 2 уровня, group→subgroup).
+- **Уровни глубже 2** (сейчас инвариант - ровно 2 уровня, group→subgroup).
 
 ## Writing surfaces (2026-06-17)
 <!-- Updated: 2026-06-17 | comfortable text fields (Composer + умлауты) -->
-Shipped: семейство «удобного письма» — автогрост-`Textarea`/комфортный `Input`, `Composer`
+Shipped: семейство «удобного письма» - автогрост-`Textarea`/комфортный `Input`, `Composer`
 (Заметки/Домашки), панель немецких спецсимволов с вставкой в курсор + Alt-хоткеи
 (Грамм-практика/Упражнения/Vocab-recall). Паттерн: [[автогрост-textarea-и-вставка-умлаутов-в-курсор]]. Deferred:
-- **Markdown write/preview для Заметок** — пользователь выбрал вариант без него; `react-markdown` уже в проекте (пока только рендер). Включить write/preview-тогл, если конспекты захотят форматирование.
-- **Умлауты/спецсимволы в Assistant-доке** — hero-композер намеренно оставлен как есть; панель можно добавить позже, аккуратно, не ломая pill→bar→window.
-- **Голосовой ввод** в поля письма (Web Speech API) — пересекается с TTS-пунктом выше.
+- **Markdown write/preview для Заметок** - пользователь выбрал вариант без него; `react-markdown` уже в проекте (пока только рендер). Включить write/preview-тогл, если конспекты захотят форматирование.
+- **Умлауты/спецсимволы в Assistant-доке** - hero-композер намеренно оставлен как есть; панель можно добавить позже, аккуратно, не ломая pill→bar→window.
+- **Голосовой ввод** в поля письма (Web Speech API) - пересекается с TTS-пунктом выше.
 
 ## Notes / dates / search (2026-07-05)
 <!-- Updated: 2026-07-05 | deferred from entryDate + markdown-notes + per-tab-search -->
@@ -80,12 +80,12 @@ Shipped: редактируемый `entryDate` (заметки/домашки/�
 по-вкладочный `SearchInput` (клиентский, фильтр-до-группировки). Решения:
 [[entryDate-это-пользовательская-дата-записи-отдельная-от-createdAt-сортировка-на-клиенте]] ·
 [[react-markdown-без-rehype-raw-это-санитайзер-заметок-редактор-остаётся-textarea]]. Deferred:
-- **`Homework.noteId` бэклинк** на исходную заметку (сейчас «отправить в домашку» — копия без связи назад).
+- **`Homework.noteId` бэклинк** на исходную заметку (сейчас «отправить в домашку» - копия без связи назад).
 - **Персист режима сортировки** (`recent`/`entryDate`) в `localStorage` (сейчас сбрасывается на дефолт `recent` при перезагрузке).
-- **Общий `MarkdownView` для grammar `[id]` и assistant-dock** — вынести рендер markdown; сейчас `MarkdownView` живёт только на детали заметки.
-- **`entryDate` для словаря** — сейчас вне скоупа (только заметки/домашки/упражнения).
+- **Общий `MarkdownView` для grammar `[id]` и assistant-dock** - вынести рендер markdown; сейчас `MarkdownView` живёт только на детали заметки.
+- **`entryDate` для словаря** - сейчас вне скоупа (только заметки/домашки/упражнения).
 - **Убрать неиспользуемый `lessonDate`** из тел `POST`/`PATCH /api/notes` (осталось от старой схемы; для сортировки его вытеснил `entryDate`, `lessonDate` остаётся в БД как «день урока»).
-- **Настоящий серверный поиск** — когда какой-либо список перерастёт 100-элементный in-memory кэп (серверный `?q=` на vocab/grammar уже есть, но намеренно не задействован ради единообразия).
+- **Настоящий серверный поиск** - когда какой-либо список перерастёт 100-элементный in-memory кэп (серверный `?q=` на vocab/grammar уже есть, но намеренно не задействован ради единообразия).
 
 ## Related
 - [[mvp-scope-and-phases]] · `PLAN.md` §7 Phase 4

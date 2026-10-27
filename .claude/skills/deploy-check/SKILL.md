@@ -39,7 +39,7 @@ All tests must pass. Report any failures.
 ```bash
 dotnet ef migrations has-pending-model-changes --project {path}
 ```
-If pending changes exist — migration is needed before deploy.
+If pending changes exist - migration is needed before deploy.
 
 ### 2d. Environment Config
 Check that all required environment variables are documented:

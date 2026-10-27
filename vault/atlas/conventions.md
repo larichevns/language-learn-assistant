@@ -12,7 +12,7 @@ TypeScript end to end. Strict mode on.
 - **Hooks**: `useXxx` camelCase.
 - **Functions/vars**: camelCase. **Constants**: UPPER_SNAKE_CASE. **Types/enums**: PascalCase.
 - **Paths**: import via `@/` alias (`@/lib/ai/...`, `@/components/...`).
-- **No business-logic `throw`** in services — return a `Result<T>` tuple; Route Handlers translate to HTTP.
+- **No business-logic `throw`** in services - return a `Result<T>` tuple; Route Handlers translate to HTTP.
 - Validate every external input with **zod** at the boundary (route handlers, AI payloads).
 
 ## API (Route Handlers)
@@ -28,7 +28,7 @@ TypeScript end to end. Strict mode on.
 - Caps measured in **characters** (`envelope/caps.ts`); silent-trim, never reject.
 - Background ops set `isBackground: true` **and** `skipRateLimit: true` and never bill cost.
 - `propose` is the model's ONLY write path; the Apply dispatcher is the ONLY writer.
-- Provider calls go through the registry/router — never hardcode a model id in a feature.
+- Provider calls go through the registry/router - never hardcode a model id in a feature.
 
 ## Database (Prisma / PostgreSQL)
 - Models PascalCase singular; Prisma maps to snake_case tables where needed via `@@map` (optional).
@@ -39,7 +39,7 @@ TypeScript end to end. Strict mode on.
 
 ## i18n
 - `next-intl`, namespaces per area. **UI = Russian by default**; `en` fallback exists from day one (see [[i18n-с-первого-дня-дефолт-русский]]).
-- **German learning content is always rendered in German** and visually marked — never auto-translated in the UI.
+- **German learning content is always rendered in German** and visually marked - never auto-translated in the UI.
 
 ## Frontend patterns
 - TanStack Query for server state; React Hook Form + zod for forms; zustand only for genuinely global client state (dock/thread/shell).

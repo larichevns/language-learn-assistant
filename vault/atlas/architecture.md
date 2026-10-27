@@ -6,9 +6,9 @@ date: 2026-06-13
 # System Architecture
 
 ## Overview
-LanguageLearnAssistant is a single **Next.js (App Router, TypeScript)** application that is, at once, the React frontend, the backend (Route Handlers), and an AI library. It is an AI tutor for a Russian speaker learning German. The design ports ToonyGamy's AI **context engine** (the part the owner praised) to TypeScript — see `PLAN.md` for the full blueprint and [[5-слойный-context-engine-портирован-из-ToonyGamy]] for the decision.
+LanguageLearnAssistant is a single **Next.js (App Router, TypeScript)** application that is, at once, the React frontend, the backend (Route Handlers), and an AI library. It is an AI tutor for a Russian speaker learning German. The design ports ToonyGamy's AI **context engine** (the part the owner praised) to TypeScript - see `PLAN.md` for the full blueprint and [[5-слойный-context-engine-портирован-из-ToonyGamy]] for the decision.
 
-The spine of the system is one invariant: **Postgres is the memory; the chat is just a desk.** Every AI call rebuilds a 5-layer prompt envelope from the database — never from chat history — and the only way the model changes the database is by emitting a `propose` card that the user must **Apply**.
+The spine of the system is one invariant: **Postgres is the memory; the chat is just a desk.** Every AI call rebuilds a 5-layer prompt envelope from the database - never from chat history - and the only way the model changes the database is by emitting a `propose` card that the user must **Apply**.
 
 ## Layers (outside-in)
 
@@ -25,14 +25,14 @@ The spine of the system is one invariant: **Postgres is the memory; the chat is 
 │    envelope/ (builder, layers, context-manager, caps, sanitize)
 │    providers/ (base, gemini, gemini-cache, registry)
 │    propose/ (tool, persist, dispatch)   prompts/ thread/ features/ guards/ usage/
-│    orchestrator.ts — executeCompletion() 7-step flow
+│    orchestrator.ts - executeCompletion() 7-step flow
 │
 ├─ lib/db, lib/auth, lib/api    Prisma client, Auth.js + guards, response envelope
 └─ prisma/schema.prisma         single source of truth (see [[database]])
 ```
 
 ## The AI context engine (5-layer envelope)
-Static → dynamic, so the cacheable prefix is byte-stable across a thread's turns. Gemini has no per-message system slot: layer 01 → `systemInstruction`; 02–05 fold into the leading cacheable `user` turn; recent turns are real `user`/`model`; the new message trails.
+Static → dynamic, so the cacheable prefix is byte-stable across a thread's turns. Gemini has no per-message system slot: layer 01 → `systemInstruction`; 02-05 fold into the leading cacheable `user` turn; recent turns are real `user`/`model`; the new message trails.
 
 ```
 01 system        persona (German tutor, reply in Russian), rules, output contract   [CACHE A]
@@ -47,13 +47,13 @@ Static → dynamic, so the cacheable prefix is byte-stable across a thread's tur
 - **Caps** are measured in characters (deterministic). Every layer is optional/tolerant (silent-trim, never reject).
 - **Scopes:** one chat thread per object (`GLOBAL | COURSE | UNIT | VOCAB_ENTRY | VOCAB_LIST | GRAMMAR_TOPIC | HOMEWORK | CLASS_NOTE | EXERCISE_SET`). Thread auto-summarizes past a watermark via a background, non-billed call.
 
-## Write path — propose / Apply (the model is never a writer)
+## Write path - propose / Apply (the model is never a writer)
 1. The model calls one polymorphic `propose(target_type, op, target_id?, summary, payload)` tool.
 2. The server zod-validates the payload and persists a `Proposal` row (`PENDING`) → emits a card over SSE.
 3. The user clicks **Apply** → the Apply dispatcher (sole writer, ownership-checked, idempotent) distills the payload into typed rows (`VocabEntry`, `GrammarTopic`, `Homework.correctionsJson`, `ExerciseSet`+items, …).
-4. The applied write re-aggregates into layers 02/03 on the next send — closing the "DB is the memory" loop. **Refine** supersedes + re-runs; **Discard** drops it. Neither writes the target.
+4. The applied write re-aggregates into layers 02/03 on the next send - closing the "DB is the memory" loop. **Refine** supersedes + re-runs; **Discard** drops it. Neither writes the target.
 
-## Orchestrator — `executeCompletion()` (7 steps, every AI feature)
+## Orchestrator - `executeCompletion()` (7 steps, every AI feature)
 `abuse → resolve prompt template → rate-limit → daily budget → route to provider/model → build request from DB → call provider → log usage`. Guards run cheapest-first. Background ops set `isBackground` **and** `skipRateLimit` and never bill.
 
 ## Providers

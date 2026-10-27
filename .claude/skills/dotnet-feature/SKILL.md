@@ -23,7 +23,7 @@ Create a complete feature module following the project's established architectur
 
 Detect which pattern the project uses:
 
-**Pattern A — Feature-Driven (TOSS-style):**
+**Pattern A - Feature-Driven (TOSS-style):**
 ```
 src/ProjectName/Features/{Feature}/
 ├── {Feature}Controller.cs
@@ -32,7 +32,7 @@ src/ProjectName/Features/{Feature}/
 └── {Feature}Dto.cs
 ```
 
-**Pattern B — Layered (ToonyGamy-style):**
+**Pattern B - Layered (ToonyGamy-style):**
 ```
 ProjectName/
 ├── Controllers/{Feature}Controller.cs
@@ -51,10 +51,10 @@ ProjectName/
 
 ### 2. DTOs
 Follow the project's DTO conventions:
-- `{Feature}ShortDto` — for list views (ID + key fields)
-- `{Feature}FullDto` — for detail views (all fields + relations)
-- `Create{Feature}Dto` — for creation (required fields, validation attributes)
-- `Update{Feature}Dto` — for updates (optional fields)
+- `{Feature}ShortDto` - for list views (ID + key fields)
+- `{Feature}FullDto` - for detail views (all fields + relations)
+- `Create{Feature}Dto` - for creation (required fields, validation attributes)
+- `Update{Feature}Dto` - for updates (optional fields)
 
 ### 3. Service Interface
 ```csharp

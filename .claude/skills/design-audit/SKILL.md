@@ -14,9 +14,9 @@ Analyze the React frontend for design inconsistencies and propose fixes.
 ## Step 1: Understand the Design System
 
 1. Check for design system files:
-   - `theme.js` / `theme.ts` — design tokens
-   - `tailwind.config.*` — custom theme extensions
-   - `globals.css` / `index.css` — base styles
+   - `theme.js` / `theme.ts` - design tokens
+   - `tailwind.config.*` - custom theme extensions
+   - `globals.css` / `index.css` - base styles
    - UI component library (`components/ui/`)
 
 2. Extract design tokens:

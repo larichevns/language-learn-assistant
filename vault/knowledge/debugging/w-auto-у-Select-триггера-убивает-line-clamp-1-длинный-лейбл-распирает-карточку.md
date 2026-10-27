@@ -12,10 +12,10 @@ date: 2026-07-05
 
 ## Корень
 База `SelectTrigger` (`components/ui/select.tsx`) содержит `whitespace-nowrap` и
-`[&>span]:line-clamp-1` (лейбл — это `<span>` `SelectValue`). Но триггер стоял с **`w-auto`**.
+`[&>span]:line-clamp-1` (лейбл - это `<span>` `SelectValue`). Но триггер стоял с **`w-auto`**.
 `w-auto` = ширина по контенту, а `line-clamp`/`truncate` **обрезают только относительно
 ограниченной ширины**. Без верхнего предела ширины обрезать не об что: элемент просто растёт
-под текст и распирает родителя. То есть `line-clamp-1` тут был мёртв — его побеждал `w-auto`.
+под текст и распирает родителя. То есть `line-clamp-1` тут был мёртв - его побеждал `w-auto`.
 
 ## Фикс
 `w-auto` → **`w-full min-w-0 max-w-[11rem]`**:
@@ -27,12 +27,12 @@ date: 2026-07-05
 а левые бейджи получили `shrink-0`.
 
 ## Правило
-`truncate`/`line-clamp-*` без ограниченной ширины — **no-op**. На флекс-элементе, который
+`truncate`/`line-clamp-*` без ограниченной ширины - **no-op**. На флекс-элементе, который
 должен обрезаться, нужны **и** предел ширины (`max-w-*`/`w-full`), **и** `min-w-0`. Прямое
 следствие mobile-first-доктрины «нет горизонтального переполнения» ([[conventions]], `min-w-0`
-на флекс-детях с truncate) — та же линия, что [[mobile-responsive-fixes]].
+на флекс-детях с truncate) - та же линия, что [[mobile-responsive-fixes]].
 
 ## Связано
 - [[conventions]] (Mobile-first, no horizontal overflow)
 - [[mobile-responsive-fixes]]
-- [[мобильная-шторка-меню-зажата-в-высоту-топбара-backdrop-blur-создаёт-containing-block-для-fixed]] — другой overflow-гоч
+- [[мобильная-шторка-меню-зажата-в-высоту-топбара-backdrop-blur-создаёт-containing-block-для-fixed]] - другой overflow-гоч
